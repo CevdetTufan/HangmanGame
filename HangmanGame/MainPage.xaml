@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="HangmanGame.MainPage"
+             Shell.NavBarIsVisible="False"
+             xmlns:resx="clr-namespace:HangmanGame.Resources.Localization">
+
+    <ScrollView>
+        <Grid RowDefinitions="*,Auto,*">
+            <VerticalStackLayout Grid.Row="1"
+                             Spacing="30"
+                             HorizontalOptions="Center"
+                             Padding="20"
+                             WidthRequest="300">
+
+                <Label Text="HANGMAN"
+                   FontSize="36"
+                   FontAttributes="Bold"
+                   TextColor="Black"
+                   HorizontalOptions="Center" />
+
+                <Picker 
+                    x:Name="LanguagePicker"
+                    Title="{Binding LanguageSelectText}"
+                    ItemsSource="{Binding Languages}"
+                    SelectedItem="{Binding SelectedLang, Mode=TwoWay}"
+                    ItemDisplayBinding="{Binding DisplayName}"
+                    TextColor="Black"
+                    />
+
+                <Button Text="{Binding StartGameText}"
+                    Command="{Binding StartGameCommand}"
+                    TextColor="Black"
+                    BackgroundColor="White"
+                    BorderColor="Black"
+                    BorderWidth="2"
+                    FontSize="18"
+                    Padding="15"
+                    CornerRadius="8" />
+            </VerticalStackLayout>
+        </Grid>
+    </ScrollView>
+
+</ContentPage>
