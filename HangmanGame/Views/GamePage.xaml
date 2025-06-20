@@ -16,14 +16,15 @@
                 Command="{Binding Source={RelativeSource AncestorType={x:Type vm:GameViewModel}}, Path=GuessCommand}"
                 CommandParameter="{Binding .}"
                 FontSize="16"
-                WidthRequest="34"
                 HeightRequest="48"
                 CornerRadius="6"
                 TextColor="Black"
                 BackgroundColor="White"
                 BorderColor="Black"
-                BorderWidth="1" />
+                BorderWidth="1"
+                Margin="2" />
         </DataTemplate>
+
     </ContentPage.Resources>
 
     <ContentPage.BindingContext>
@@ -97,30 +98,12 @@
             Margin="0,5,0,0" />
 
         <!-- 5. Klavye -->
-        <StackLayout
-            Grid.Row="4"
-            Spacing="6"
-            HorizontalOptions="Center"
-            Margin="0,5,0,0"
-            MaximumWidthRequest="360">
+        <VerticalStackLayout Grid.Row="4"
+                             x:Name="KeyboardLayout"
+                             Spacing="8"
+                             Padding="10,10,10,0"
+                             HorizontalOptions="Center">
+        </VerticalStackLayout>
 
-            <!-- Satır 1 -->
-            <StackLayout Orientation="Horizontal" Spacing="4"
-                         HorizontalOptions="CenterAndExpand"
-                         BindableLayout.ItemsSource="{Binding KeyboardRows[0]}"
-                         BindableLayout.ItemTemplate="{StaticResource KeyTemplate}" />
-
-            <!-- Satır 2 -->
-            <StackLayout Orientation="Horizontal" Spacing="4" Padding="18,0,0,0"
-                         HorizontalOptions="CenterAndExpand"
-                         BindableLayout.ItemsSource="{Binding KeyboardRows[1]}"
-                         BindableLayout.ItemTemplate="{StaticResource KeyTemplate}" />
-
-            <!-- Satır 3 -->
-            <StackLayout Orientation="Horizontal" Spacing="4" Padding="36,0,0,0"
-                         HorizontalOptions="CenterAndExpand"
-                         BindableLayout.ItemsSource="{Binding KeyboardRows[2]}"
-                         BindableLayout.ItemTemplate="{StaticResource KeyTemplate}" />
-        </StackLayout>
     </Grid>
 </ContentPage>

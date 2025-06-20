@@ -50,6 +50,6 @@ public class MainPageViewModel : INotifyPropertyChanged
 	{
 		AppState.SelectedLang = SelectedLang.Code;
 		AppState.WordsPlayedCount = 0;
-		await Shell.Current.GoToAsync("//game");
+		await Shell.Current.GoToAsync("//GamePage");
 	}
 }

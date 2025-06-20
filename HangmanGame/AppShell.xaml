@@ -15,5 +15,5 @@
     <ShellContent
       Title="Hangman"
       ContentTemplate="{DataTemplate views:GamePage}"
-      Route="game" />
+      Route="GamePage" />
 </Shell>

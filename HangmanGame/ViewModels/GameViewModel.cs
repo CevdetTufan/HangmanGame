@@ -41,18 +41,19 @@ namespace HangmanGame.ViewModels
 
 		public ICommand GuessCommand { get; }
 
-
 		public GameViewModel()
 		{
 			_repo = new WordRepository();
 			GuessCommand = new Command<string>(OnGuess);
-
-			// Başlangıçta seçili dile göre klavye oluştur
-			BuildKeyboard(AppState.SelectedLang);
-
-			// İlk kelimeyi yükle
 			LoadNextWord();
 		}
+
+		public void RefreshKeyboard()
+		{
+			BuildKeyboard(AppState.SelectedLang); 
+			OnPropertyChanged(nameof(KeyboardRows));
+		}
+
 
 		private void BuildKeyboard(string code)
 		{
@@ -99,6 +100,7 @@ namespace HangmanGame.ViewModels
 			KeyboardRows = rows;
 			OnPropertyChanged(nameof(KeyboardRows));
 		}
+
 
 		private async void LoadNextWord()
 		{

@@ -1,4 +1,5 @@
 using HangmanGame.ViewModels;
+using Microsoft.Maui.Layouts;
 using SkiaSharp;
 using SkiaSharp.Views.Maui;
 
@@ -74,12 +75,79 @@ public partial class GamePage : ContentPage
 
 	private async void OnExitClicked(object sender, EventArgs e)
 	{
-		await Shell.Current.GoToAsync("//HomePage");
-		// Veya: Application.Current.MainPage = new NavigationPage(new HomePage());
+		await Shell.Current.GoToAsync("//MainPage");
 	}
 
 	private void ImageButton_Clicked(object sender, EventArgs e)
 	{
 
 	}
+
+	protected override void OnAppearing()
+	{
+		base.OnAppearing();
+
+		if (BindingContext is GameViewModel vm)
+		{
+			vm.RefreshKeyboard();
+			BuildKeyboardLayout(vm.KeyboardRows);
+		}
+	}
+
+	private void BuildKeyboardLayout(List<List<string>> keyboardRows)
+	{
+		KeyboardLayout.Children.Clear();
+
+		var displayWidth = DeviceDisplay.MainDisplayInfo.Width / DeviceDisplay.MainDisplayInfo.Density;
+		double spacing = 6;
+		double horizontalPadding = 20;
+		double availableWidth = displayWidth - horizontalPadding * 2;
+
+		var flexLayout = new FlexLayout
+		{
+			Wrap = FlexWrap.Wrap,
+			Direction = FlexDirection.Row,
+			JustifyContent = FlexJustify.Center,
+			AlignItems = FlexAlignItems.Center,
+			Margin = new Thickness(0, 5),
+			Padding = new Thickness(0),
+			AlignContent = FlexAlignContent.Start
+		};
+
+		// Tüm harfleri tek boyutlu dizi olarak al
+		var allKeys = keyboardRows.SelectMany(r => r).ToList();
+
+		// Ortalama 10 harfe göre boyut hesapla
+		int referenceKeyCount = 10;
+		double totalSpacing = (referenceKeyCount + 1) * spacing;
+		double keyWidth = (availableWidth - totalSpacing) / referenceKeyCount;
+		double keyHeight = 48;
+
+		foreach (var key in allKeys)
+		{
+			var button = new Button
+			{
+				Text = key,
+				FontSize = 18,
+				WidthRequest = keyWidth,
+				HeightRequest = keyHeight,
+				CornerRadius = 6,
+				BackgroundColor = Colors.White,
+				BorderColor = Colors.Black,
+				BorderWidth = 1,
+				Margin = new Thickness(spacing / 2),
+				TextColor = Colors.Black,
+				Command = (BindingContext as GameViewModel)?.GuessCommand,
+				CommandParameter = key
+			};
+
+			flexLayout.Children.Add(button);
+		}
+
+		KeyboardLayout.Children.Add(flexLayout);
+	}
+
+
+
+
 }
