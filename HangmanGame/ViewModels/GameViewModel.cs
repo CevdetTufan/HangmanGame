@@ -9,20 +9,19 @@ namespace HangmanGame.ViewModels
 {
 	public class GameViewModel : INotifyPropertyChanged
 	{
-
-		public ImageSource HangmanImageSource { get; private set; }
-
 		public event PropertyChangedEventHandler? PropertyChanged;
 		void OnPropertyChanged([CallerMemberName] string? name = null)
 			=> PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
 		// UI metinleri
-		public string GameTitleText => Resources.Localization.Strings.GameTitle;
+		//public string GameTitleText => Resources.Localization.Strings.GameTitle;
 		public string HintText => _currentWord?.Meaning ?? string.Empty;
+
 		public string WordDisplay =>
-			string.Join(" ", _currentWord?.Word
-								  .Select(c => _guessedLetters.Contains(c) ? c.ToString() : "_")
-								  ?? new[] { string.Empty });
+			string.Join(" ", _currentWord?.Word.ToUpperInvariant()
+				.Select(c => _guessedLetters.Contains(c) ? c.ToString() : "_")
+				?? new[] { string.Empty });
+
 		public string HangmanImage => $"hangman_{6 - RemainingTries}.png";
 		public string ScoreText =>
 			string.Format(Resources.Localization.Strings.ScoreFormat, CurrentScore);
@@ -33,6 +32,13 @@ namespace HangmanGame.ViewModels
 		public List<List<string>> KeyboardRows { get; private set; } = new();
 
 		private WordEntry? _currentWord;
+
+		public string CurrentAnswer =>
+				_currentWord?.Word.ToUpperInvariant() ?? string.Empty;
+
+		public bool IsCorrectLetter(string letter) =>
+			CurrentAnswer.Contains(letter.ToUpperInvariant());
+
 		private readonly WordRepository _repo;
 		private readonly HashSet<char> _guessedLetters = new();
 
@@ -111,35 +117,46 @@ namespace HangmanGame.ViewModels
 
 			OnPropertyChanged(nameof(HintText));
 			OnPropertyChanged(nameof(WordDisplay));
-			OnPropertyChanged(nameof(HangmanImage));
+			//OnPropertyChanged(nameof(HangmanImage));
 			OnPropertyChanged(nameof(ScoreText));
 			OnPropertyChanged(nameof(TriesText));
 		}
 
-		private async void OnGuess(string letter)
+		private void OnGuess(string letter)
 		{
-			char c = letter[0];
-			if (_guessedLetters.Contains(c)) return;
+			char c = char.ToUpperInvariant(letter[0]);
+
+			if (_guessedLetters.Contains(c))
+				return;
+
 			_guessedLetters.Add(c);
 
-			if (!_currentWord!.Word.Contains(c)) RemainingTries--;
-			else CurrentScore += 10;
+			if (!_currentWord!.Word.ToUpperInvariant().Contains(c))
+			{
+				RemainingTries--;
+				IncreaseStep();
+			}
+			else
+			{
+				CurrentScore += 10;
+			}
 
-			// UI güncelle
 			OnPropertyChanged(nameof(WordDisplay));
-			OnPropertyChanged(nameof(HangmanImage));
+			OnPropertyChanged(nameof(HangmanImage));  
 			OnPropertyChanged(nameof(ScoreText));
 			OnPropertyChanged(nameof(TriesText));
 
-			// Sonuç sayfasına yönlendir
 			if (RemainingTries <= 0)
-				await Shell.Current.GoToAsync($"//result?win=false&answer={_currentWord.Word}");
-			else if (_currentWord.Word.All(ch => _guessedLetters.Contains(ch)))
+			{
+				Shell.Current.GoToAsync($"//result?win=false&answer={_currentWord.Word}");
+			}
+			else if (_currentWord.Word.ToUpperInvariant().All(ch => _guessedLetters.Contains(char.ToUpperInvariant(ch))))
 			{
 				AppState.WordsPlayedCount++;
-				await Shell.Current.GoToAsync($"//result?win=true&answer={_currentWord.Word}");
+				Shell.Current.GoToAsync($"//result?win=true&answer={_currentWord.Word}");
 			}
 		}
+
 
 		private static string GetLevel(int count)
 		{

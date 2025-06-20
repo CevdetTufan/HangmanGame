@@ -36,36 +36,49 @@ public partial class GamePage : ContentPage
 
 		int step = vm.CurrentStep;
 
-		float x = info.Width / 4;
+		float centerX = info.Width / 2f;
 		float baseY = info.Height * 0.95f;
 		float poleHeight = info.Height * 0.7f;
-		float headRadius = 25;
+		float hookY = baseY - poleHeight;
+		float hookX = centerX + 100;
+		float headRadius = 25f;
 
-		// Platform her zaman çizilsin
-		canvas.DrawLine(x - 40, baseY, x + 100, baseY, paint); // zemin
-		canvas.DrawLine(x, baseY, x, baseY - poleHeight, paint); // dikey direk
-		canvas.DrawLine(x, baseY - poleHeight, x + 100, baseY - poleHeight, paint); // üst yatay
-		canvas.DrawLine(x + 100, baseY - poleHeight, x + 100, baseY - poleHeight + 40, paint); // ip
+		// ??? ZEMÝN VE DÝKEY DÝREK (her zaman) ???
+		canvas.DrawLine(centerX - 100, baseY, centerX + 100, baseY, paint);
+		canvas.DrawLine(centerX, baseY, centerX, hookY, paint);
 
-		// Diðerleri step'e göre çizilsin
+		// ??? ÜST KÝRÝÞ VE ÝP (adým baðýmsýz bir kere) ???
+		canvas.DrawLine(centerX, hookY, hookX, hookY, paint);
+		canvas.DrawLine(hookX, hookY, hookX, hookY + 40, paint);
+
+		// ??? KALAN PARÇALAR ADIMA GÖRE ???
+
+		// 1: kafa
 		if (step >= 1)
-			canvas.DrawCircle(x + 100, baseY - poleHeight + 65, headRadius, paint); // kafa
+			canvas.DrawCircle(hookX, hookY + 65, headRadius, paint);
 
+		// 2: gövde
 		if (step >= 2)
-			canvas.DrawLine(x + 100, baseY - poleHeight + 90, x + 100, baseY - poleHeight + 160, paint); // gövde
+			canvas.DrawLine(hookX, hookY + 90, hookX, hookY + 160, paint);
 
+		// 3: sol kol
 		if (step >= 3)
-		{
-			canvas.DrawLine(x + 100, baseY - poleHeight + 100, x + 70, baseY - poleHeight + 130, paint); // sol kol
-			canvas.DrawLine(x + 100, baseY - poleHeight + 100, x + 130, baseY - poleHeight + 130, paint); // sað kol
-		}
+			canvas.DrawLine(hookX, hookY + 110, hookX - 30, hookY + 140, paint);
 
+		// 4: sað kol
 		if (step >= 4)
-		{
-			canvas.DrawLine(x + 100, baseY - poleHeight + 160, x + 70, baseY - poleHeight + 210, paint); // sol bacak
-			canvas.DrawLine(x + 100, baseY - poleHeight + 160, x + 130, baseY - poleHeight + 210, paint); // sað bacak
-		}
+			canvas.DrawLine(hookX, hookY + 110, hookX + 30, hookY + 140, paint);
+
+		// 5: sol bacak
+		if (step >= 5)
+			canvas.DrawLine(hookX, hookY + 160, hookX - 30, hookY + 210, paint);
+
+		// 6: sað bacak
+		if (step >= 6)
+			canvas.DrawLine(hookX, hookY + 160, hookX + 30, hookY + 210, paint);
 	}
+
+
 
 	private void OnToggleMusicClicked(object sender, EventArgs e)
 	{
@@ -94,11 +107,32 @@ public partial class GamePage : ContentPage
 		}
 	}
 
+	private void OnKeyClicked(object sender, EventArgs e)
+	{
+		if (sender is Button btn
+			&& BindingContext is GameViewModel vm
+			&& btn.CommandParameter is string letter)
+		{
+			// first execute the guess
+			vm.GuessCommand.Execute(letter);
+
+			// now disable
+			btn.IsEnabled = false;
+
+			// color-feedback
+			var correct = vm.IsCorrectLetter(letter);
+			btn.BackgroundColor = correct
+				? Colors.LightGreen
+				: Colors.Pink;
+		}
+	}
+
 	private void BuildKeyboardLayout(List<List<string>> keyboardRows)
 	{
 		KeyboardLayout.Children.Clear();
 
-		var displayWidth = DeviceDisplay.MainDisplayInfo.Width / DeviceDisplay.MainDisplayInfo.Density;
+		var displayWidth = DeviceDisplay.MainDisplayInfo.Width
+						   / DeviceDisplay.MainDisplayInfo.Density;
 		double spacing = 6;
 		double horizontalPadding = 20;
 		double availableWidth = displayWidth - horizontalPadding * 2;
@@ -110,14 +144,9 @@ public partial class GamePage : ContentPage
 			JustifyContent = FlexJustify.Center,
 			AlignItems = FlexAlignItems.Center,
 			Margin = new Thickness(0, 5),
-			Padding = new Thickness(0),
-			AlignContent = FlexAlignContent.Start
 		};
 
-		// Tüm harfleri tek boyutlu dizi olarak al
 		var allKeys = keyboardRows.SelectMany(r => r).ToList();
-
-		// Ortalama 10 harfe göre boyut hesapla
 		int referenceKeyCount = 10;
 		double totalSpacing = (referenceKeyCount + 1) * spacing;
 		double keyWidth = (availableWidth - totalSpacing) / referenceKeyCount;
@@ -137,8 +166,22 @@ public partial class GamePage : ContentPage
 				BorderWidth = 1,
 				Margin = new Thickness(spacing / 2),
 				TextColor = Colors.Black,
-				Command = (BindingContext as GameViewModel)?.GuessCommand,
-				CommandParameter = key
+			};
+
+			button.Clicked += (s, e) =>
+			{
+				if (BindingContext is GameViewModel vm)
+					vm.GuessCommand.Execute(key);
+
+				button.IsEnabled = false;
+
+				if (BindingContext is GameViewModel vm2)
+				{
+					bool correct = vm2.IsCorrectLetter(key);
+					button.BackgroundColor = correct
+						? Colors.LightGreen
+						: Colors.Pink;
+				}
 			};
 
 			flexLayout.Children.Add(button);
@@ -146,8 +189,4 @@ public partial class GamePage : ContentPage
 
 		KeyboardLayout.Children.Add(flexLayout);
 	}
-
-
-
-
 }

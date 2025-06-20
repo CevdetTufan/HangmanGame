@@ -13,18 +13,18 @@
         <DataTemplate x:Key="KeyTemplate">
             <Button
                 Text="{Binding .}"
-                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:GameViewModel}}, Path=GuessCommand}"
+                Command="{Binding BindingContext.GuessCommand, Source={x:Reference GamePage}}"
                 CommandParameter="{Binding .}"
+                Clicked="OnKeyClicked"
                 FontSize="16"
+                WidthRequest="34"
                 HeightRequest="48"
                 CornerRadius="6"
                 TextColor="Black"
                 BackgroundColor="White"
                 BorderColor="Black"
-                BorderWidth="1"
-                Margin="2" />
+                BorderWidth="1" />
         </DataTemplate>
-
     </ContentPage.Resources>
 
     <ContentPage.BindingContext>
@@ -98,12 +98,13 @@
             Margin="0,5,0,0" />
 
         <!-- 5. Klavye -->
-        <VerticalStackLayout Grid.Row="4"
-                             x:Name="KeyboardLayout"
-                             Spacing="8"
-                             Padding="10,10,10,0"
-                             HorizontalOptions="Center">
-        </VerticalStackLayout>
-
+        <VerticalStackLayout
+            Grid.Row="4"
+            x:Name="KeyboardLayout"
+            Spacing="8"
+            Padding="10,0"
+            HorizontalOptions="Center"
+            BindableLayout.ItemsSource="{Binding KeyboardRows}"
+            BindableLayout.ItemTemplate="{StaticResource KeyTemplate}" />
     </Grid>
 </ContentPage>
