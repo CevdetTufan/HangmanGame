@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using CommunityToolkit.Maui;
+using CommunityToolkit.Maui.Core;
+using Microsoft.Extensions.Logging;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using SQLitePCL;
 
@@ -14,6 +16,8 @@ namespace HangmanGame
 			builder
 				.UseMauiApp<App>()
 				.UseSkiaSharp()
+				.UseMauiCommunityToolkit()
+				.UseMauiCommunityToolkitCore()
 				.ConfigureFonts(fonts =>
 				{
 					fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");

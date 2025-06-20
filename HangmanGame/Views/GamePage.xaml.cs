@@ -1,3 +1,5 @@
+ï»¿using CommunityToolkit.Maui;
+using CommunityToolkit.Maui.Extensions;
 using HangmanGame.ViewModels;
 using Microsoft.Maui.Layouts;
 using SkiaSharp;
@@ -19,6 +21,34 @@ public partial class GamePage : ContentPage
 			if (vm.CurrentStep == 6)
 				await PlayHangAnimation();
 		};
+
+		vm.GameOver += async (_, args) =>
+		{
+			await PlayHangAnimation();
+
+			var popup = new ResultPopup(args.Win, args.Answer);
+
+			var options = new PopupOptions
+			{
+				CanBeDismissedByTappingOutsideOfPopup = false,
+				PageOverlayColor = Colors.Black.WithAlpha(0.5f)
+			};
+
+			await Shell.Current.ShowPopupAsync(popup, options);
+
+			if (popup.PlayAgain == true)
+			{
+				// â€œYeni Oyunâ€ dediyse oyunu sÄ±fÄ±rla
+				await vm.LoadNextWord();
+				vm.CurrentStep = 0;
+				CanvasView.InvalidateSurface();
+				vm.RefreshKeyboard();
+			}
+			else
+			{ 
+				// Ã‡Ä±kÄ±ÅŸ dediyse istersen Shell.Current.GoToAsync("//MainPage") vs.
+			}
+		};
 	}
 
 	private void OnCanvasViewPaintSurface(object sender, SKPaintSurfaceEventArgs e)
@@ -27,7 +57,7 @@ public partial class GamePage : ContentPage
 		var info = e.Info;
 		canvas.Clear(SKColors.White);
 
-		// 1) Zeminin ortasından geçen elips gölgesi
+		// 1) Zeminin ortasÄ±ndan geÃ§en elips gÃ¶lgesi
 		using (var shadowPaint = new SKPaint
 		{
 			Style = SKPaintStyle.Fill,
@@ -38,10 +68,10 @@ public partial class GamePage : ContentPage
 		{
 			float centerX = info.Width / 2f;
 			float baseY = info.Height * 0.95f;
-			float halfWidth = 100f;   // platform yarı genişliği
-			float halfHeight = 6f;     // gölge yarı yüksekliği
+			float halfWidth = 100f;   // platform yarÄ± geniÅŸliÄŸi
+			float halfHeight = 6f;     // gÃ¶lge yarÄ± yÃ¼ksekliÄŸi
 
-			// Elips dikdörtgeni: top = baseY - halfHeight, bottom = baseY + halfHeight
+			// Elips dikdÃ¶rtgeni: top = baseY - halfHeight, bottom = baseY + halfHeight
 			var shadowRect = new SKRect(
 				centerX - halfWidth,
 				baseY - halfHeight,
@@ -51,7 +81,7 @@ public partial class GamePage : ContentPage
 			canvas.DrawOval(shadowRect, shadowPaint);
 		}
 
-		// 2) Platform ve iskeletin geri kalanı
+		// 2) Platform ve iskeletin geri kalanÄ±
 		using (var paint = new SKPaint
 		{
 			Style = SKPaintStyle.Stroke,
@@ -72,25 +102,25 @@ public partial class GamePage : ContentPage
 			// Dikey direk
 			canvas.DrawLine(centerX, baseY, centerX, hookY, paint);
 
-			// Üst kiriş ve ip
+			// Ãœst kiriÅŸ ve ip
 			canvas.DrawLine(centerX, hookY, hookX, hookY, paint);
 			canvas.DrawLine(hookX, hookY, hookX, hookY + 40, paint);
 
-			// Vücut parçaları (CurrentStep’e göre)
+			// VÃ¼cut parÃ§alarÄ± (CurrentStepâ€™e gÃ¶re)
 			int step = (BindingContext as GameViewModel)?.CurrentStep ?? 0;
 			if (step >= 1) canvas.DrawCircle(hookX, hookY + 65, 25, paint);                              // kafa
-			if (step >= 2) canvas.DrawLine(hookX, hookY + 90, hookX, hookY + 160, paint);              // gövde
+			if (step >= 2) canvas.DrawLine(hookX, hookY + 90, hookX, hookY + 160, paint);              // gÃ¶vde
 			if (step >= 3) canvas.DrawLine(hookX, hookY + 110, hookX - 30, hookY + 140, paint);         // sol kol
-			if (step >= 4) canvas.DrawLine(hookX, hookY + 110, hookX + 30, hookY + 140, paint);         // sağ kol
+			if (step >= 4) canvas.DrawLine(hookX, hookY + 110, hookX + 30, hookY + 140, paint);         // saÄŸ kol
 			if (step >= 5) canvas.DrawLine(hookX, hookY + 160, hookX - 30, hookY + 210, paint);         // sol bacak
-			if (step >= 6) canvas.DrawLine(hookX, hookY + 160, hookX + 30, hookY + 210, paint);         // sağ bacak
+			if (step >= 6) canvas.DrawLine(hookX, hookY + 160, hookX + 30, hookY + 210, paint);         // saÄŸ bacak
 		}
 	}
 
 	private async Task PlayHangAnimation()
 	{
-		// CanvasView: SKCanvasView, VisualElement olduğu için RotateTo kullanabiliriz
-		// Birkaç kez sola-sağa sallanıp duruyor.
+		// CanvasView: SKCanvasView, VisualElement olduÄŸu iÃ§in RotateTo kullanabiliriz
+		// BirkaÃ§ kez sola-saÄŸa sallanÄ±p duruyor.
 		await CanvasView.RotateTo(10, 300, Easing.SinInOut);
 		await CanvasView.RotateTo(-10, 300, Easing.SinInOut);
 		await CanvasView.RotateTo(8, 300, Easing.SinInOut);
@@ -101,8 +131,8 @@ public partial class GamePage : ContentPage
 
 	private void OnToggleMusicClicked(object sender, EventArgs e)
 	{
-		// Şimdilik geçici
-		Console.WriteLine("?? Müzik aç/kapa tıklandı.");
+		// Åimdilik geÃ§ici
+		Console.WriteLine("?? MÃ¼zik aÃ§/kapa tÄ±klandÄ±.");
 	}
 
 	private async void OnExitClicked(object sender, EventArgs e)

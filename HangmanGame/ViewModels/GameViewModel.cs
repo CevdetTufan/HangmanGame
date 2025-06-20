@@ -10,6 +10,7 @@ namespace HangmanGame.ViewModels
 	public class GameViewModel : INotifyPropertyChanged
 	{
 		public event PropertyChangedEventHandler? PropertyChanged;
+		public event EventHandler<(bool Win, string Answer)>? GameOver;
 		void OnPropertyChanged([CallerMemberName] string? name = null)
 			=> PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
@@ -51,7 +52,7 @@ namespace HangmanGame.ViewModels
 		{
 			_repo = new WordRepository();
 			GuessCommand = new Command<string>(OnGuess);
-			LoadNextWord();
+			_ = LoadNextWord(); 
 		}
 
 		public void RefreshKeyboard()
@@ -108,7 +109,7 @@ namespace HangmanGame.ViewModels
 		}
 
 
-		private async void LoadNextWord()
+		public async Task LoadNextWord()
 		{
 			var level = GetLevel(AppState.WordsPlayedCount);
 			_currentWord = await _repo.GetDummyWordAsync();
@@ -148,12 +149,14 @@ namespace HangmanGame.ViewModels
 
 			if (RemainingTries <= 0)
 			{
-				Shell.Current.GoToAsync($"//result?win=false&answer={_currentWord.Word}");
+				GameOver?.Invoke(this, (false, _currentWord!.Word));
+				//Shell.Current.GoToAsync($"//result?win=false&answer={_currentWord.Word}");
 			}
 			else if (_currentWord.Word.ToUpperInvariant().All(ch => _guessedLetters.Contains(char.ToUpperInvariant(ch))))
 			{
 				AppState.WordsPlayedCount++;
-				Shell.Current.GoToAsync($"//result?win=true&answer={_currentWord.Word}");
+				//Shell.Current.GoToAsync($"//result?win=true&answer={_currentWord.Word}");
+				GameOver?.Invoke(this, (true, _currentWord.Word));
 			}
 		}
 
