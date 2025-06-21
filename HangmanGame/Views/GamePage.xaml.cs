@@ -12,6 +12,21 @@ public partial class GamePage : ContentPage
 	private double _manOffsetX = 0;
 	private double _manOffsetY = 0;
 
+	private IDispatcherTimer? _animationTimer;
+	private List<SceneObject> _clouds = new();
+	private List<SceneObject> _birds = new();
+	private Random _random = new();
+	private bool _sceneInitialized = false;
+	private double _time = 0;
+
+	// Hareketli nesneler için basit bir yardımcı sınıf
+	private class SceneObject
+	{
+		public SKPoint Position { get; set; }
+		public float Size { get; set; }
+		public float Speed { get; set; }
+	}
+
 	public bool NeedsReset { set
 		{
 			if (value && BindingContext is GameViewModel vm)
@@ -73,7 +88,13 @@ public partial class GamePage : ContentPage
 			}
 		};
 
-		vm.NewGameStarted += (s, e) => ResetKeyboard();
+		vm.NewGameStarted += (s, e) => {
+			ResetKeyboard();
+			_sceneInitialized = false; // Animasyonlu nesneleri yeniden başlat
+		};
+
+		this.Appearing += OnPageAppearing;
+		this.Disappearing += OnPageDisappearing;
 	}
 
 	private void ResetKeyboard()
@@ -100,11 +121,92 @@ public partial class GamePage : ContentPage
 		}
 	}
 
+	private void OnPageAppearing(object? sender, EventArgs e)
+	{
+		if (_animationTimer == null)
+		{
+			_animationTimer = Dispatcher.CreateTimer();
+			_animationTimer.Interval = TimeSpan.FromMilliseconds(33); // ~30fps
+			_animationTimer.Tick += AnimationTimer_Tick;
+		}
+		_animationTimer.Start();
+	}
+
+	private void OnPageDisappearing(object? sender, EventArgs e)
+	{
+		_animationTimer?.Stop();
+	}
+
+	private void AnimationTimer_Tick(object? sender, EventArgs e)
+	{
+		if (!_sceneInitialized) return;
+
+		_time += 0.05; // Çim animasyonu için zamanı ilerlet
+
+		// Bulutları ve kuşları hareket ettir
+		UpdateSceneObjectPositions(_clouds, (float)CanvasView.Width);
+		UpdateSceneObjectPositions(_birds, (float)CanvasView.Width);
+
+		CanvasView.InvalidateSurface();
+	}
+
+	private void UpdateSceneObjectPositions(List<SceneObject> objects, float width)
+	{
+		foreach (var obj in objects)
+		{
+			var newX = obj.Position.X + obj.Speed;
+
+			// Yöne göre ekran dışına çıkma kontrolü ve döngü
+			if (obj.Speed > 0 && newX > width + obj.Size * 2)
+			{
+				newX = -obj.Size * 2; // Sağdan çıktı, soldan gir
+			}
+			else if (obj.Speed < 0 && newX < -obj.Size * 2)
+			{
+				newX = width + obj.Size * 2; // Soldan çıktı, sağdan gir
+			}
+			obj.Position = new SKPoint(newX, obj.Position.Y);
+		}
+	}
+
+	private void InitializeSceneObjects(int width, int height)
+	{
+		_clouds.Clear();
+		for (int i = 0; i < 4; i++)
+		{
+			var speed = (float)(_random.NextDouble() * 0.5 + 0.2);
+			_clouds.Add(new SceneObject
+			{
+				Position = new SKPoint(_random.Next(0, width), _random.Next((int)(height * 0.1), (int)(height * 0.4))),
+				Size = _random.Next(20, 35),
+				Speed = _random.Next(0, 2) == 0 ? speed : -speed // Yön rastgele
+			});
+		}
+
+		_birds.Clear();
+		for (int i = 0; i < 3; i++)
+		{
+			var speed = (float)(_random.NextDouble() * 1.5 + 0.8); // Hız çeşitliliği artırıldı
+			_birds.Add(new SceneObject
+			{
+				Position = new SKPoint(_random.Next(0, width), _random.Next((int)(height * 0.1), (int)(height * 0.3))),
+				Size = 7,
+				Speed = _random.Next(0, 2) == 0 ? speed : -speed // Yön rastgele
+			});
+		}
+		_sceneInitialized = true;
+	}
+
 	private void OnCanvasViewPaintSurface(object sender, SKPaintSurfaceEventArgs e)
 	{
 		var canvas = e.Surface.Canvas;
 		var info = e.Info;
 		canvas.Clear(); // Arka planı temizle
+
+		if (!_sceneInitialized)
+		{
+			InitializeSceneObjects(info.Width, info.Height);
+		}
 
 		// --- Arka Plan Sahnesi ---
 		bool isDarkTheme = Application.Current?.RequestedTheme == AppTheme.Dark;
@@ -151,11 +253,12 @@ public partial class GamePage : ContentPage
 		// 3. Bulutlar
 		using (var cloudPaint = new SKPaint { IsAntialias = true, Color = SKColors.White.WithAlpha(200) })
 		{
-			canvas.DrawCircle(info.Width * 0.2f, info.Height * 0.25f, 25, cloudPaint);
-			canvas.DrawCircle(info.Width * 0.25f, info.Height * 0.25f, 30, cloudPaint);
-			canvas.DrawCircle(info.Width * 0.3f, info.Height * 0.25f, 25, cloudPaint);
-			canvas.DrawCircle(info.Width * 0.6f, info.Height * 0.35f, 20, cloudPaint);
-			canvas.DrawCircle(info.Width * 0.65f, info.Height * 0.35f, 25, cloudPaint);
+			foreach (var cloud in _clouds)
+			{
+				canvas.DrawCircle(cloud.Position.X, cloud.Position.Y, cloud.Size, cloudPaint);
+				canvas.DrawCircle(cloud.Position.X + cloud.Size * 0.8f, cloud.Position.Y, cloud.Size * 1.2f, cloudPaint);
+				canvas.DrawCircle(cloud.Position.X + cloud.Size * 1.6f, cloud.Position.Y, cloud.Size, cloudPaint);
+			}
 		}
 
 		float baseY = info.Height * 0.95f;
@@ -182,20 +285,19 @@ public partial class GamePage : ContentPage
 		// 5. Kuşlar
 		using (var birdPaint = new SKPaint { IsAntialias = true, Color = isDarkTheme ? SKColors.LightGray : SKColors.Black, Style = SKPaintStyle.Stroke, StrokeWidth = 3 })
 		{
-			var birdPath = new SKPath();
-			birdPath.MoveTo(-7, 0);
-			birdPath.LineTo(0, -7);
-			birdPath.LineTo(7, 0);
-			
-			canvas.Save();
-			canvas.Translate(info.Width * 0.4f, info.Height * 0.15f);
-			canvas.DrawPath(birdPath, birdPaint);
-			canvas.Restore();
+			foreach (var bird in _birds)
+			{
+				var birdPath = new SKPath();
+				float dir = Math.Sign(bird.Speed); // Yöne göre "V" şeklini ayarla
+				birdPath.MoveTo(-bird.Size * dir, 0);
+				birdPath.LineTo(0, -bird.Size);
+				birdPath.LineTo(bird.Size * dir, 0);
 
-			canvas.Save();
-			canvas.Translate(info.Width * 0.45f, info.Height * 0.2f);
-			canvas.DrawPath(birdPath, birdPaint);
-			canvas.Restore();
+				canvas.Save();
+				canvas.Translate(bird.Position);
+				canvas.DrawPath(birdPath, birdPaint);
+				canvas.Restore();
+			}
 		}
 
 		// --- Ön Plan (İskele ve Adam) ---
@@ -257,11 +359,12 @@ public partial class GamePage : ContentPage
 		// 6. Zemin Çimleri (En son, platformun üstüne çizilir)
 		using (var grassPaint = new SKPaint { IsAntialias = true, Color = SKColors.Green.WithAlpha(180), StrokeWidth = 2 })
 		{
-			var rand = new Random();
 			for (int i = 0; i < info.Width; i += 7)
 			{
-				var grassHeight = (float)(rand.NextDouble() * 10 + 5);
-				canvas.DrawLine(i, baseY, i, baseY - grassHeight, grassPaint);
+				var grassHeight = (float)(_random.NextDouble() * 10 + 5);
+				// Zamanla değişen bir sinüs dalgası ile sallanma efekti
+				var sway = (float)Math.Sin(_time + i * 0.1) * 3;
+				canvas.DrawLine(i, baseY, i + sway, baseY - grassHeight, grassPaint);
 			}
 		}
 	}
