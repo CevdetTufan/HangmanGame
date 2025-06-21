@@ -9,23 +9,7 @@ namespace HangmanGame
         public MainPage()
         {
             InitializeComponent();
-			BindingContext = new MainPageViewModel();
-		}
-
-        protected override bool OnBackButtonPressed()
-        {
-            MainThread.BeginInvokeOnMainThread(async () =>
-            {
-                var popup = new ConfirmationPopup();
-                var result = await this.ShowPopupAsync(popup);
-
-                if (popup.Confirmed)
-                {
-                    Application.Current.Quit();
-                }
-            });
-
-            return true;
+            BindingContext = new MainPageViewModel();
         }
-	}
+    }
 }

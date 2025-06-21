@@ -5,11 +5,15 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using CommunityToolkit.Maui.Views;
+using HangmanGame.Views;
 
 namespace HangmanGame.ViewModels;
 
 public class MainPageViewModel : INotifyPropertyChanged
 {
+	private bool _isExitPopupOpen = false;
+
 	public event PropertyChangedEventHandler? PropertyChanged;
 	void OnPropertyChanged([CallerMemberName] string? name = null)
 		=> PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
@@ -32,6 +36,7 @@ public class MainPageViewModel : INotifyPropertyChanged
 				CultureSelector.SetCulture(value.Code);
 				UpdateLocalizedStrings();
 				AppState.SelectedLang = value.Code;
+				Preferences.Set("selected_language_code", value.Code);
 			}
 		}
 	}
@@ -47,6 +52,29 @@ public class MainPageViewModel : INotifyPropertyChanged
 		AppState.SelectedLang = _selectedLang.Code;
 
 		StartGameCommand = new Command(OnStartGame);
+	}
+
+	public async Task<bool> AttemptExit()
+	{
+		if (_isExitPopupOpen) return false;
+
+		try
+		{
+			_isExitPopupOpen = true;
+			var popup = new ConfirmationPopup();
+			await Shell.Current.CurrentPage.ShowPopupAsync(popup);
+
+			if (popup.Confirmed)
+			{
+				Application.Current.Quit();
+				return true;
+			}
+		}
+		finally
+		{
+			_isExitPopupOpen = false;
+		}
+		return false;
 	}
 
 	private void UpdateLocalizedStrings()

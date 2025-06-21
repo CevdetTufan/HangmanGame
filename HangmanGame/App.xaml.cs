@@ -7,8 +7,10 @@ namespace HangmanGame
         public App()
         {
             InitializeComponent();
-			CultureSelector.ResetCulture(); 
-		}
+
+            var savedLangCode = Preferences.Get("selected_language_code", "en");
+            CultureSelector.SetCulture(savedLangCode);
+        }
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
