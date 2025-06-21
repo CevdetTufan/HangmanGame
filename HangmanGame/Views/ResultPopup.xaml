@@ -4,63 +4,57 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
     x:Class="HangmanGame.Views.ResultPopup"
-    HorizontalOptions="Fill"
     VerticalOptions="End"
     Color="Transparent">
 
-    <Grid RowDefinitions="*,Auto">
-        <!-- Boşluk -->
-        <BoxView Grid.Row="0" Color="Transparent" />
+    <!-- Asıl popup içeriği -->
+    <Border
+        Grid.Row="1"
+        WidthRequest="320"
+        BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2C}"
+        StrokeShape="RoundRectangle 24"
+        Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#333333}"
+        Padding="24"
+        Margin="20,0,20,20">
+        <VerticalStackLayout Spacing="16" HorizontalOptions="Center" VerticalOptions="Center">
+            <Label
+                x:Name="ResultIconLabel"
+                FontSize="48"
+                HorizontalTextAlignment="Center" />
+            
+            <Label
+                x:Name="MessageLabel"
+                FontSize="20"
+                FontAttributes="Bold"
+                HorizontalTextAlignment="Center" />
 
-        <!-- Asıl popup içeriği -->
-        <Border
-            Grid.Row="1"
-            WidthRequest="320"
-            BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2C}"
-            StrokeShape="RoundRectangle 24"
-            Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#333333}"
-            Padding="24"
-            Margin="20,0,20,20">
-            <VerticalStackLayout Spacing="16" HorizontalOptions="Center" VerticalOptions="Center">
-                <Label
-                    x:Name="ResultIconLabel"
-                    FontSize="48"
-                    HorizontalTextAlignment="Center" />
+            <Label
+                x:Name="AnswerLabel"
+                IsVisible="False"
+                FontSize="16"
+                HorizontalTextAlignment="Center"
+                TextColor="{AppThemeBinding Light=Gray, Dark=LightGray}" />
+
+            <HorizontalStackLayout Spacing="10" HorizontalOptions="Center" Margin="0,20,0,0">
+                <Button
+                    Text="Ana Menü"
+                    Clicked="OnExitClicked"
+                    BackgroundColor="{AppThemeBinding Light=#F0F0F0, Dark=#505050}"
+                    TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                    BorderColor="Transparent"
+                    WidthRequest="120"
+                    CornerRadius="16"
+                    Padding="12,10"/>
                 
-                <Label
-                    x:Name="MessageLabel"
-                    FontSize="20"
-                    FontAttributes="Bold"
-                    HorizontalTextAlignment="Center" />
-
-                <Label
-                    x:Name="AnswerLabel"
-                    IsVisible="False"
-                    FontSize="16"
-                    HorizontalTextAlignment="Center"
-                    TextColor="{AppThemeBinding Light=Gray, Dark=LightGray}" />
-
-                <HorizontalStackLayout Spacing="10" HorizontalOptions="Center" Margin="0,20,0,0">
-                    <Button
-                        Text="Ana Menü"
-                        Clicked="OnExitClicked"
-                        BackgroundColor="{AppThemeBinding Light=#F0F0F0, Dark=#505050}"
-                        TextColor="{AppThemeBinding Light=Black, Dark=White}"
-                        BorderColor="Transparent"
-                        WidthRequest="120"
-                        CornerRadius="16"
-                        Padding="12,10"/>
-                    
-                    <Button
-                        Text="Yeni Oyun"
-                        Clicked="OnPlayAgainClicked" 
-                        BackgroundColor="{StaticResource Primary}"
-                        TextColor="White"
-                        WidthRequest="120"
-                        CornerRadius="16"
-                        Padding="12,10"/>
-                </HorizontalStackLayout>
-            </VerticalStackLayout>
-        </Border>
-    </Grid>
+                <Button
+                    Text="Yeni Oyun"
+                    Clicked="OnPlayAgainClicked" 
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    WidthRequest="120"
+                    CornerRadius="16"
+                    Padding="12,10"/>
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+    </Border>
 </toolkit:Popup>

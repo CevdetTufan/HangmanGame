@@ -18,6 +18,7 @@ public partial class GamePage : ContentPage
 	private Random _random = new();
 	private bool _sceneInitialized = false;
 	private double _time = 0;
+	private GameViewModel _vm;
 
 	// Hareketli nesneler için basit bir yardımcı sınıf
 	private class SceneObject
@@ -40,58 +41,8 @@ public partial class GamePage : ContentPage
 	public GamePage(IAudioManager audioManager)
 	{
 		InitializeComponent();
-		BindingContext = new GameViewModel(audioManager);
-
-		var vm = (GameViewModel)BindingContext;
-		vm.StepChanged += async (s, e) =>
-		{
-			CanvasView.InvalidateSurface();
-
-			// Son adımda büyük sallanma animasyonu oynayacağı için aradaki adımları sars.
-			if (vm.CurrentStep > 0 && vm.CurrentStep < 6)
-			{
-				await PlayPartAddedAnimation();
-			}
-			else if (vm.CurrentStep == 6)
-			{
-				await PlayAdvancedHangAnimation();
-			}
-		};
-
-		vm.GameOver += async (_, args) =>
-		{
-			await Task.Delay(500); // Animasyonun bitmesi için kısa bir bekleme
-			
-			var popup = new ResultPopup(args.Win, args.Answer);
-			await this.ShowPopupAsync(popup);
-
-			if (popup.PlayAgain == true)
-			{
-				// "Yeni Oyun" dediyse oyunu sıfırla
-				var gameViewModel = (GameViewModel)BindingContext;
-				
-				// Eğer tüm kelimeler tamamlandıysa, kelimeleri sıfırla
-				if (args.Answer == "TEBRİKLER! BÜTÜN KELİMELERİ BİLDİNİZ!")
-				{
-					await gameViewModel.ResetAllWordsAndLoadNewWordAsync();
-				}
-				else
-				{
-					await gameViewModel.ResetAndLoadNewWordAsync();
-				}
-				
-				CanvasView.InvalidateSurface();
-			}
-			else
-			{ 
-				await Shell.Current.GoToAsync("//MainPage");
-			}
-		};
-
-		vm.NewGameStarted += (s, e) => {
-			ResetKeyboard();
-			_sceneInitialized = false; // Animasyonlu nesneleri yeniden başlat
-		};
+		_vm = new GameViewModel(audioManager);
+		BindingContext = _vm;
 
 		this.Appearing += OnPageAppearing;
 		this.Disappearing += OnPageDisappearing;
@@ -123,6 +74,10 @@ public partial class GamePage : ContentPage
 
 	private void OnPageAppearing(object? sender, EventArgs e)
 	{
+		_vm.GameOver += Vm_GameOver;
+		_vm.StepChanged += Vm_StepChanged;
+		_vm.NewGameStarted += Vm_NewGameStarted;
+
 		if (_animationTimer == null)
 		{
 			_animationTimer = Dispatcher.CreateTimer();
@@ -135,6 +90,10 @@ public partial class GamePage : ContentPage
 	private void OnPageDisappearing(object? sender, EventArgs e)
 	{
 		_animationTimer?.Stop();
+
+		_vm.GameOver -= Vm_GameOver;
+		_vm.StepChanged -= Vm_StepChanged;
+		_vm.NewGameStarted -= Vm_NewGameStarted;
 	}
 
 	private void AnimationTimer_Tick(object? sender, EventArgs e)
@@ -448,4 +407,58 @@ public partial class GamePage : ContentPage
 				: Colors.Pink;
 		}
 	}
+
+	#region ViewModel Event Handlers
+
+	private async void Vm_GameOver(object? sender, (bool Win, string Answer) args)
+	{
+		await Task.Delay(500); // Animasyonun bitmesi için kısa bir bekleme
+
+		var popup = new ResultPopup(args.Win, args.Answer);
+		await this.ShowPopupAsync(popup);
+
+		if (popup.PlayAgain == true)
+		{
+			// "Yeni Oyun" dediyse oyunu sıfırla
+			var gameViewModel = (GameViewModel)BindingContext;
+
+			// Eğer tüm kelimeler tamamlandıysa, kelimeleri sıfırla
+			if (args.Answer == "TEBRİKLER! BÜTÜN KELİMELERİ BİLDİNİZ!")
+			{
+				await gameViewModel.ResetAllWordsAndLoadNewWordAsync();
+			}
+			else
+			{
+				await gameViewModel.ResetAndLoadNewWordAsync();
+			}
+
+			CanvasView.InvalidateSurface();
+		}
+		else
+		{
+			await Shell.Current.GoToAsync("//MainPage");
+		}
+	}
+
+	private async void Vm_StepChanged(object? sender, EventArgs e)
+	{
+		CanvasView.InvalidateSurface();
+
+		if (_vm.CurrentStep > 0 && _vm.CurrentStep < 6)
+		{
+			await PlayPartAddedAnimation();
+		}
+		else if (_vm.CurrentStep == 6)
+		{
+			await PlayAdvancedHangAnimation();
+		}
+	}
+
+	private void Vm_NewGameStarted(object? sender, EventArgs e)
+	{
+		ResetKeyboard();
+		_sceneInitialized = false; // Animasyonlu nesneleri yeniden başlat
+	}
+
+	#endregion
 }
