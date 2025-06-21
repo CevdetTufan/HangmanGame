@@ -87,6 +87,9 @@ public class MainPageViewModel : INotifyPropertyChanged
 	{
 		AppState.SelectedLang = SelectedLang.Code;
 		AppState.WordsPlayedCount = 0;
-		await Shell.Current.GoToAsync("//GamePage");
+		await Shell.Current.GoToAsync("//GamePage", new Dictionary<string, object>
+		{
+			{ "NewGame", true }
+		});
 	}
 }

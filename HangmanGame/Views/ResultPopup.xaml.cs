@@ -14,7 +14,14 @@ namespace HangmanGame.Views
 			// Default: null (ne seçti bilinmiyor)
 			PlayAgain = null;
 
-			if (win)
+			// Özel durum: Tüm kelimeler tamamlandı
+			if (answer == "TEBRİKLER! BÜTÜN KELİMELERİ BİLDİNİZ!")
+			{
+				ResultIconLabel.Text = "🏆";
+				MessageLabel.Text = "Tebrikler! Bütün kelimeleri bildiniz!";
+				AnswerLabel.IsVisible = false;
+			}
+			else if (win)
 			{
 				ResultIconLabel.Text = "🎉";
 				MessageLabel.Text = "Tebrikler! Kazandınız";
@@ -31,6 +38,7 @@ namespace HangmanGame.Views
 
 		private async void OnPlayAgainClicked(object sender, EventArgs e)
 		{
+			// Popup içinden başka popup göstermek yerine, doğrudan onaylı olarak kapat
 			PlayAgain = true;           // "Yeni Oyun" dedi
 			await CloseAsync();         // Popup'u kapat
 		}

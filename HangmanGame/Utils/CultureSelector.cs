@@ -27,7 +27,7 @@ namespace HangmanGame.Utils
 		}
 
 		public static LanguageOption GetDefaultLanguage()
-		=> new LanguageOption { DisplayName = "🇺🇸 English (US)", Code = "en-US" };
+		=> new LanguageOption { DisplayName = "🇺🇸 English", Code = "en" };
 
         public static List<LanguageOption> GetAvailableLanguages()
         {

@@ -6,8 +6,19 @@ using SkiaSharp.Views.Maui;
 
 namespace HangmanGame.Views;
 
+[QueryProperty(nameof(NeedsReset), "NewGame")]
 public partial class GamePage : ContentPage
 {
+	public bool NeedsReset { set
+		{
+			if (value && BindingContext is GameViewModel vm)
+			{
+				MainThread.BeginInvokeOnMainThread(async () => {
+					await vm.ResetAndLoadNewWordAsync();
+				});
+			}
+		} 
+	}
 	public GamePage(IAudioManager audioManager)
 	{
 		InitializeComponent();
@@ -33,22 +44,49 @@ public partial class GamePage : ContentPage
 			{
 				// "Yeni Oyun" dediyse oyunu sıfırla
 				var gameViewModel = (GameViewModel)BindingContext;
-				await gameViewModel.ResetAndLoadNewWordAsync();
+				
+				// Eğer tüm kelimeler tamamlandıysa, kelimeleri sıfırla
+				if (args.Answer == "TEBRİKLER! BÜTÜN KELİMELERİ BİLDİNİZ!")
+				{
+					await gameViewModel.ResetAllWordsAndLoadNewWordAsync();
+				}
+				else
+				{
+					await gameViewModel.ResetAndLoadNewWordAsync();
+				}
+				
 				CanvasView.InvalidateSurface();
 			}
 			else
 			{ 
-				await Shell.Current.GoToAsync("..");
+				await Shell.Current.GoToAsync("//MainPage");
 			}
 		};
+
+		vm.NewGameStarted += (s, e) => ResetKeyboard();
 	}
 
-	protected override async void OnAppearing()
+	private void ResetKeyboard()
 	{
-		base.OnAppearing();
-		if (BindingContext is GameViewModel vm && vm.CurrentAnswer == string.Empty)
+		var keybButtons = KeyboardLayout
+			.Children.OfType<FlexLayout>()
+			.SelectMany(flex => flex.Children.OfType<Button>());
+
+		Color originalColor;
+		if (Application.Current?.RequestedTheme == AppTheme.Light)
 		{
-			await vm.ResetAndLoadNewWordAsync();
+			originalColor = Colors.White;
+		}
+		else
+		{
+			originalColor = Color.FromArgb("#FF2C2C2C");
+		}
+
+
+		foreach (var btn in keybButtons)
+		{
+			btn.IsEnabled = true;
+			btn.BackgroundColor = originalColor;
 		}
 	}
 

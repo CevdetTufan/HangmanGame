@@ -12,6 +12,7 @@ namespace HangmanGame.ViewModels
 	{
 		public event PropertyChangedEventHandler? PropertyChanged;
 		public event EventHandler<(bool Win, string Answer)>? GameOver;
+		public event EventHandler? NewGameStarted;
 		void OnPropertyChanged([CallerMemberName] string? name = null)
 			=> PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
@@ -25,7 +26,7 @@ namespace HangmanGame.ViewModels
 				?? new[] { string.Empty });
 
 		public string HangmanImage => $"hangman_{6 - RemainingTries}.png";
-		public string Score => CurrentScore.ToString();
+		public string Score => _totalScore.ToString();
 		public string TriesText => RemainingTries.ToString();
 
 		private bool _isMusicOn = true;
@@ -58,7 +59,8 @@ namespace HangmanGame.ViewModels
 		private readonly HashSet<char> _guessedLetters = new();
 
 		private int RemainingTries = 6;
-		private int CurrentScore = 0;
+		private int _totalScore = 0;
+		private int _roundScore = 0;
 
 		private readonly IAudioManager _audioManager;
 		private IAudioPlayer? _backgroundMusicPlayer;
@@ -74,6 +76,7 @@ namespace HangmanGame.ViewModels
 			_repo = new WordRepository();
 			GuessCommand = new Command<string>(OnGuess);
 			ToggleMusicCommand = new Command(OnToggleMusic);
+			_totalScore = Preferences.Get("TotalScore", 0);
 		}
 
 		public void RefreshKeyboard()
@@ -132,28 +135,64 @@ namespace HangmanGame.ViewModels
 
 		public async Task ResetAndLoadNewWordAsync()
 		{
-			// Ses çalarları oluştur
-			_backgroundMusicPlayer = _audioManager.CreatePlayer(await FileSystem.OpenAppPackageFileAsync("background.mp3"));
-			_correctSoundPlayer = _audioManager.CreatePlayer(await FileSystem.OpenAppPackageFileAsync("correct.mp3"));
-			_wrongSoundPlayer = _audioManager.CreatePlayer(await FileSystem.OpenAppPackageFileAsync("wrong.mp3"));
-			_backgroundMusicPlayer.Loop = true;
-
-			if (IsMusicOn)
+			await _repo.InitializeAsync();
+			
+			// Yeni kelime yükle
+			var word = await _repo.GetRandomWordAsync();
+			if (word != null)
 			{
-				_backgroundMusicPlayer.Play();
+				_currentWord = word;
+				_guessedLetters.Clear();
+				RemainingTries = 6;
+				_roundScore = _currentWord.Word.Length * 10;
+				CurrentStep = 0;
+				
+				// Klavyeyi yeniden oluştur
+				BuildKeyboard(AppState.SelectedLang);
+				
+				OnPropertyChanged(nameof(HintText));
+				OnPropertyChanged(nameof(WordDisplay));
+				OnPropertyChanged(nameof(Score));
+				OnPropertyChanged(nameof(TriesText));
+				OnPropertyChanged(nameof(KeyboardRows));
+
+				NewGameStarted?.Invoke(this, EventArgs.Empty);
 			}
+			else
+			{
+				// Kelime kalmadıysa özel bir olay tetikle
+				GameOver?.Invoke(this, (true, "TEBRİKLER! BÜTÜN KELİMELERİ BİLDİNİZ!"));
+			}
+		}
 
-			BuildKeyboard(AppState.SelectedLang);
-			CurrentStep = 0;
-			var level = GetLevel(AppState.WordsPlayedCount);
-			_currentWord = await _repo.GetDummyWordAsync();
-			RemainingTries = 6;
-			_guessedLetters.Clear();
+		public async Task ResetAllWordsAndLoadNewWordAsync()
+		{
+			await _repo.InitializeAsync();
+			
+			// Tüm kelimeleri sıfırla
+			await _repo.ResetAllWords();
+			
+			// Yeni kelime yükle
+			var word = await _repo.GetRandomWordAsync();
+			if (word != null)
+			{
+				_currentWord = word;
+				_guessedLetters.Clear();
+				RemainingTries = 6;
+				_roundScore = _currentWord.Word.Length * 10;
+				CurrentStep = 0;
+				
+				// Klavyeyi yeniden oluştur
+				BuildKeyboard(AppState.SelectedLang);
+				
+				OnPropertyChanged(nameof(HintText));
+				OnPropertyChanged(nameof(WordDisplay));
+				OnPropertyChanged(nameof(Score));
+				OnPropertyChanged(nameof(TriesText));
+				OnPropertyChanged(nameof(KeyboardRows));
 
-			OnPropertyChanged(nameof(HintText));
-			OnPropertyChanged(nameof(WordDisplay));
-			OnPropertyChanged(nameof(Score));
-			OnPropertyChanged(nameof(TriesText));
+				NewGameStarted?.Invoke(this, EventArgs.Empty);
+			}
 		}
 
 		private void OnGuess(string letter)
@@ -168,26 +207,29 @@ namespace HangmanGame.ViewModels
 			if (!_currentWord!.Word.ToUpperInvariant().Contains(c))
 			{
 				RemainingTries--;
+				_roundScore = Math.Max(0, _roundScore - 10);
 				if (IsMusicOn) _wrongSoundPlayer?.Play();
 				IncreaseStep();
 			}
 			else
 			{
-				CurrentScore += 10;
 				if (IsMusicOn) _correctSoundPlayer?.Play();
 			}
 
 			OnPropertyChanged(nameof(WordDisplay));
 			OnPropertyChanged(nameof(HangmanImage));  
-			OnPropertyChanged(nameof(Score));
 			OnPropertyChanged(nameof(TriesText));
 
 			if (RemainingTries <= 0)
 			{
 				GameOver?.Invoke(this, (false, _currentWord!.Word));
 			}
-			else if (_currentWord.Word.ToUpperInvariant().All(ch => _guessedLetters.Contains(char.ToUpperInvariant(ch))))
+			else if (_currentWord.Word.ToUpperInvariant().All(ch => _guessedLetters.Contains(ch)))
 			{
+				_totalScore += _roundScore;
+				Preferences.Set("TotalScore", _totalScore);
+				OnPropertyChanged(nameof(Score));
+
 				AppState.WordsPlayedCount++;
 				GameOver?.Invoke(this, (true, _currentWord.Word));
 			}
