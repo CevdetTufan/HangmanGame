@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using SQLitePCL;
+using Plugin.Maui.Audio;
 
 namespace HangmanGame
 {
@@ -16,6 +17,7 @@ namespace HangmanGame
 				.UseMauiApp<App>()
 				.UseSkiaSharp()
 				.UseMauiCommunityToolkit()
+				.AddAudio()
 				.ConfigureFonts(fonts =>
 				{
 					fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -26,7 +28,7 @@ namespace HangmanGame
 #if DEBUG
 			builder.Logging.AddDebug();
 #endif
-			builder.Services.AddLocalization(); 
+			builder.Services.AddLocalization();
 			return builder.Build();
 		}
 	}

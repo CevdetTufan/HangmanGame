@@ -5,40 +5,36 @@
              Shell.NavBarIsVisible="False"
              xmlns:resx="clr-namespace:HangmanGame.Resources.Localization">
 
-    <ScrollView>
-        <Grid RowDefinitions="*,Auto,*">
-            <VerticalStackLayout Grid.Row="1"
-                             Spacing="30"
+    <Grid RowDefinitions="*,Auto,*" Padding="20">
+
+        <VerticalStackLayout Grid.Row="1"
+                             Spacing="20"
                              HorizontalOptions="Center"
-                             Padding="20"
                              WidthRequest="300">
 
-                <Label Text="HANGMAN"
-                   FontSize="36"
+            <Label Text="HANGMAN"
+                   FontSize="48"
                    FontAttributes="Bold"
-                   TextColor="Black"
                    HorizontalOptions="Center" />
 
-                <Picker 
-                    x:Name="LanguagePicker"
-                    Title="{Binding LanguageSelectText}"
-                    ItemsSource="{Binding Languages}"
-                    SelectedItem="{Binding SelectedLang, Mode=TwoWay}"
-                    ItemDisplayBinding="{Binding DisplayName}"
-                    TextColor="Black"
-                    />
-
-                <Button Text="{Binding StartGameText}"
+            <Button Text="{Binding StartGameText}"
                     Command="{Binding StartGameCommand}"
-                    TextColor="Black"
-                    BackgroundColor="White"
-                    BorderColor="Black"
-                    BorderWidth="2"
                     FontSize="18"
                     Padding="15"
-                    CornerRadius="8" />
-            </VerticalStackLayout>
-        </Grid>
-    </ScrollView>
+                    CornerRadius="8" 
+                    BackgroundColor="White"
+                    TextColor="Black"
+                    BorderColor="Black"
+                    BorderWidth="2"/>
 
+            <Picker 
+                x:Name="LanguagePicker"
+                Title="{Binding LanguageSelectText}"
+                ItemsSource="{Binding Languages}"
+                SelectedItem="{Binding SelectedLang, Mode=TwoWay}"
+                ItemDisplayBinding="{Binding DisplayName}"
+                />
+            
+        </VerticalStackLayout>
+    </Grid>
 </ContentPage>

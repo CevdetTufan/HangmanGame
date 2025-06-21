@@ -4,6 +4,7 @@ using HangmanGame.Utils;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using Plugin.Maui.Audio;
 
 namespace HangmanGame.ViewModels
 {
@@ -59,16 +60,20 @@ namespace HangmanGame.ViewModels
 		private int RemainingTries = 6;
 		private int CurrentScore = 0;
 
+		private readonly IAudioManager _audioManager;
+		private IAudioPlayer? _backgroundMusicPlayer;
+		private IAudioPlayer? _correctSoundPlayer;
+		private IAudioPlayer? _wrongSoundPlayer;
+
 		public ICommand GuessCommand { get; }
 		public ICommand ToggleMusicCommand { get; }
 
-		public GameViewModel()
+		public GameViewModel(IAudioManager audioManager)
 		{
+			_audioManager = audioManager;
 			_repo = new WordRepository();
 			GuessCommand = new Command<string>(OnGuess);
 			ToggleMusicCommand = new Command(OnToggleMusic);
-
-			_ = LoadNextWord(); 
 		}
 
 		public void RefreshKeyboard()
@@ -125,8 +130,21 @@ namespace HangmanGame.ViewModels
 		}
 
 
-		public async Task LoadNextWord()
+		public async Task ResetAndLoadNewWordAsync()
 		{
+			// Ses çalarları oluştur
+			_backgroundMusicPlayer = _audioManager.CreatePlayer(await FileSystem.OpenAppPackageFileAsync("background.mp3"));
+			_correctSoundPlayer = _audioManager.CreatePlayer(await FileSystem.OpenAppPackageFileAsync("correct.mp3"));
+			_wrongSoundPlayer = _audioManager.CreatePlayer(await FileSystem.OpenAppPackageFileAsync("wrong.mp3"));
+			_backgroundMusicPlayer.Loop = true;
+
+			if (IsMusicOn)
+			{
+				_backgroundMusicPlayer.Play();
+			}
+
+			BuildKeyboard(AppState.SelectedLang);
+			CurrentStep = 0;
 			var level = GetLevel(AppState.WordsPlayedCount);
 			_currentWord = await _repo.GetDummyWordAsync();
 			RemainingTries = 6;
@@ -134,7 +152,6 @@ namespace HangmanGame.ViewModels
 
 			OnPropertyChanged(nameof(HintText));
 			OnPropertyChanged(nameof(WordDisplay));
-			//OnPropertyChanged(nameof(HangmanImage));
 			OnPropertyChanged(nameof(Score));
 			OnPropertyChanged(nameof(TriesText));
 		}
@@ -151,11 +168,13 @@ namespace HangmanGame.ViewModels
 			if (!_currentWord!.Word.ToUpperInvariant().Contains(c))
 			{
 				RemainingTries--;
+				if (IsMusicOn) _wrongSoundPlayer?.Play();
 				IncreaseStep();
 			}
 			else
 			{
 				CurrentScore += 10;
+				if (IsMusicOn) _correctSoundPlayer?.Play();
 			}
 
 			OnPropertyChanged(nameof(WordDisplay));
@@ -166,16 +185,13 @@ namespace HangmanGame.ViewModels
 			if (RemainingTries <= 0)
 			{
 				GameOver?.Invoke(this, (false, _currentWord!.Word));
-				//Shell.Current.GoToAsync($"//result?win=false&answer={_currentWord.Word}");
 			}
 			else if (_currentWord.Word.ToUpperInvariant().All(ch => _guessedLetters.Contains(char.ToUpperInvariant(ch))))
 			{
 				AppState.WordsPlayedCount++;
-				//Shell.Current.GoToAsync($"//result?win=true&answer={_currentWord.Word}");
 				GameOver?.Invoke(this, (true, _currentWord.Word));
 			}
 		}
-
 
 		private static string GetLevel(int count)
 		{
@@ -217,7 +233,15 @@ namespace HangmanGame.ViewModels
 		private void OnToggleMusic(object? obj)
 		{
 			IsMusicOn = !IsMusicOn;
-			// Burada gerçek ses çalma/durdurma mantığı olabilir
+
+			if (IsMusicOn)
+			{
+				_backgroundMusicPlayer?.Play();
+			}
+			else
+			{
+				_backgroundMusicPlayer?.Pause();
+			}
 		}
 	}
 }

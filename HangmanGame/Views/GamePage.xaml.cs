@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Maui.Views;
 using HangmanGame.ViewModels;
+using Plugin.Maui.Audio;
 using SkiaSharp;
 using SkiaSharp.Views.Maui;
 
@@ -7,9 +8,10 @@ namespace HangmanGame.Views;
 
 public partial class GamePage : ContentPage
 {
-	public GamePage()
+	public GamePage(IAudioManager audioManager)
 	{
 		InitializeComponent();
+		BindingContext = new GameViewModel(audioManager);
 
 		var vm = (GameViewModel)BindingContext;
 		vm.StepChanged += async (s, e) =>
@@ -31,7 +33,7 @@ public partial class GamePage : ContentPage
 			{
 				// "Yeni Oyun" dediyse oyunu sıfırla
 				var gameViewModel = (GameViewModel)BindingContext;
-				await gameViewModel.LoadNextWord();
+				await gameViewModel.ResetAndLoadNewWordAsync();
 				CanvasView.InvalidateSurface();
 			}
 			else
@@ -39,6 +41,15 @@ public partial class GamePage : ContentPage
 				await Shell.Current.GoToAsync("..");
 			}
 		};
+	}
+
+	protected override async void OnAppearing()
+	{
+		base.OnAppearing();
+		if (BindingContext is GameViewModel vm && vm.CurrentAnswer == string.Empty)
+		{
+			await vm.ResetAndLoadNewWordAsync();
+		}
 	}
 
 	private void OnCanvasViewPaintSurface(object sender, SKPaintSurfaceEventArgs e)
@@ -132,23 +143,13 @@ public partial class GamePage : ContentPage
 
 		if (popup.Confirmed)
 		{
-			await Shell.Current.GoToAsync("..");
+			await Shell.Current.GoToAsync("//MainPage");
 		}
 	}
 
-	private void ImageButton_Clicked(object sender, EventArgs e)
+	private async void ImageButton_Clicked(object sender, EventArgs e)
 	{
-		Shell.Current.GoToAsync("..");
-	}
-
-	protected override void OnAppearing()
-	{
-		base.OnAppearing();
-
-		if (BindingContext is GameViewModel vm)
-		{
-			vm.RefreshKeyboard();
-		}
+		await Shell.Current.GoToAsync("//MainPage");
 	}
 
 	private void OnKeyClicked(object sender, EventArgs e)

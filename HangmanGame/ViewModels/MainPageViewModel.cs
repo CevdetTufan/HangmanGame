@@ -1,4 +1,5 @@
 ﻿using HangmanGame.Models;
+using HangmanGame.Resources.Localization;
 using HangmanGame.Utils;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -13,37 +14,45 @@ public class MainPageViewModel : INotifyPropertyChanged
 	void OnPropertyChanged([CallerMemberName] string? name = null)
 		=> PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-	public string LanguageSelectText => Resources.Localization.Strings.SelectLanguage;
-	public string StartGameText => Resources.Localization.Strings.StartGame;
+	public string LanguageSelectText => Strings.SelectLanguage;
+	public string StartGameText => Strings.StartGame;
 
-	private LanguageOption _selectedLang = new() { DisplayName = string.Empty, Code = string.Empty };
+	public ObservableCollection<LanguageOption> Languages { get; }
+
+	private LanguageOption _selectedLang;
 	public LanguageOption SelectedLang
 	{
 		get => _selectedLang;
 		set
 		{
-			if (_selectedLang?.Code == value?.Code) return;
-
-			_selectedLang = value ?? CultureSelector.GetDefaultLanguage();
-
-			OnPropertyChanged();
-			CultureSelector.SetCulture(_selectedLang.Code);
-
-			// Notify changes  
-			OnPropertyChanged(nameof(LanguageSelectText));
-			OnPropertyChanged(nameof(StartGameText));
+			if (_selectedLang != value)
+			{
+				_selectedLang = value;
+				OnPropertyChanged(nameof(SelectedLang));
+				CultureSelector.SetCulture(value.Code);
+				UpdateLocalizedStrings();
+				AppState.SelectedLang = value.Code;
+			}
 		}
 	}
-
-	public ObservableCollection<LanguageOption> Languages { get; }
 
 	public ICommand StartGameCommand { get; }
 
 	public MainPageViewModel()
 	{
 		Languages = CultureSelector.GetAvailableLanguages().ToObservableCollection();
-		SelectedLang = Languages.First(x => x.Code == "en");
+
+		var currentCode = Thread.CurrentThread.CurrentCulture.TwoLetterISOLanguageName;
+		_selectedLang = Languages.FirstOrDefault(l => l.Code == currentCode) ?? Languages[0];
+		AppState.SelectedLang = _selectedLang.Code;
+
 		StartGameCommand = new Command(OnStartGame);
+	}
+
+	private void UpdateLocalizedStrings()
+	{
+		OnPropertyChanged(nameof(StartGameText));
+		OnPropertyChanged(nameof(LanguageSelectText));
 	}
 
 	private async void OnStartGame()
