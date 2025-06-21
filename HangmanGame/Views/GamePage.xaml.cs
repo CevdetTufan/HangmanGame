@@ -104,9 +104,103 @@ public partial class GamePage : ContentPage
 	{
 		var canvas = e.Surface.Canvas;
 		var info = e.Info;
-		canvas.Clear(); // Arka planı temizle, temanın rengini alsın
+		canvas.Clear(); // Arka planı temizle
 
-		// 1) Zeminin ortasından geçen elips gölgesi
+		// --- Arka Plan Sahnesi ---
+		bool isDarkTheme = Application.Current?.RequestedTheme == AppTheme.Dark;
+
+		// 1. Gökyüzü Gradient'ı
+		using (var bgPaint = new SKPaint())
+		{
+			SKColor startColor, endColor;
+			if (isDarkTheme)
+			{
+				startColor = SKColor.Parse("#2C3E50"); // Gece mavisi
+				endColor = SKColor.Parse("#465A70");
+			}
+			else
+			{
+				startColor = SKColor.Parse("#87CEEB"); // Gündüz mavisi
+				endColor = SKColor.Parse("#E0F8FF");
+			}
+
+			bgPaint.Shader = SKShader.CreateLinearGradient(
+				new SKPoint(info.Rect.MidX, info.Rect.Top),
+				new SKPoint(info.Rect.MidX, info.Rect.Bottom),
+				new[] { startColor, endColor },
+				SKShaderTileMode.Clamp);
+
+			canvas.DrawRect(info.Rect, bgPaint);
+		}
+
+		// 2. Güneş / Ay
+		using (var sunMoonPaint = new SKPaint { IsAntialias = true })
+		{
+			if (isDarkTheme)
+			{
+				sunMoonPaint.Color = SKColors.WhiteSmoke; // Ay
+				canvas.DrawCircle(info.Width * 0.8f, info.Height * 0.2f, 30, sunMoonPaint);
+			}
+			else
+			{
+				sunMoonPaint.Color = SKColors.Gold; // Güneş
+				canvas.DrawCircle(info.Width * 0.8f, info.Height * 0.2f, 40, sunMoonPaint);
+			}
+		}
+
+		// 3. Bulutlar
+		using (var cloudPaint = new SKPaint { IsAntialias = true, Color = SKColors.White.WithAlpha(200) })
+		{
+			canvas.DrawCircle(info.Width * 0.2f, info.Height * 0.25f, 25, cloudPaint);
+			canvas.DrawCircle(info.Width * 0.25f, info.Height * 0.25f, 30, cloudPaint);
+			canvas.DrawCircle(info.Width * 0.3f, info.Height * 0.25f, 25, cloudPaint);
+			canvas.DrawCircle(info.Width * 0.6f, info.Height * 0.35f, 20, cloudPaint);
+			canvas.DrawCircle(info.Width * 0.65f, info.Height * 0.35f, 25, cloudPaint);
+		}
+
+		float baseY = info.Height * 0.95f;
+		float centerX = info.Width / 2f;
+
+		// 4. Uzaktaki Ağaçlar
+		using (var treePaint = new SKPaint { IsAntialias = true, Color = isDarkTheme ? SKColor.Parse("#5D6D7E") : SKColor.Parse("#95A5A6") })
+		{
+			var path1 = new SKPath();
+			path1.MoveTo(info.Width * 0.1f, baseY);
+			path1.LineTo(info.Width * 0.15f, baseY - 80);
+			path1.LineTo(info.Width * 0.2f, baseY);
+			path1.Close();
+			canvas.DrawPath(path1, treePaint);
+
+			var path2 = new SKPath();
+			path2.MoveTo(info.Width * 0.7f, baseY);
+			path2.LineTo(info.Width * 0.75f, baseY - 100);
+			path2.LineTo(info.Width * 0.8f, baseY);
+			path2.Close();
+			canvas.DrawPath(path2, treePaint);
+		}
+		
+		// 5. Kuşlar
+		using (var birdPaint = new SKPaint { IsAntialias = true, Color = isDarkTheme ? SKColors.LightGray : SKColors.Black, Style = SKPaintStyle.Stroke, StrokeWidth = 3 })
+		{
+			var birdPath = new SKPath();
+			birdPath.MoveTo(-7, 0);
+			birdPath.LineTo(0, -7);
+			birdPath.LineTo(7, 0);
+			
+			canvas.Save();
+			canvas.Translate(info.Width * 0.4f, info.Height * 0.15f);
+			canvas.DrawPath(birdPath, birdPaint);
+			canvas.Restore();
+
+			canvas.Save();
+			canvas.Translate(info.Width * 0.45f, info.Height * 0.2f);
+			canvas.DrawPath(birdPath, birdPaint);
+			canvas.Restore();
+		}
+
+		// --- Ön Plan (İskele ve Adam) ---
+
+		// Zeminin ortasından geçen elips gölgesi
 		using (var shadowPaint = new SKPaint
 		{
 			Style = SKPaintStyle.Fill,
@@ -115,61 +209,60 @@ public partial class GamePage : ContentPage
 			MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 8)
 		})
 		{
-			float centerX = info.Width / 2f;
-			float baseY = info.Height * 0.95f;
-			float halfWidth = 100f;   // platform yarı genişliği
-			float halfHeight = 6f;     // gölge yarı yüksekliği
-
-			// Elips dikdörtgeni: top = baseY - halfHeight, bottom = baseY + halfHeight
-			var shadowRect = new SKRect(
-				centerX - halfWidth,
-				baseY - halfHeight,
-				centerX + halfWidth,
-				baseY + halfHeight
-			);
+			float halfWidth = 100f;
+			float halfHeight = 6f;
+			var shadowRect = new SKRect(centerX - halfWidth, baseY - halfHeight, centerX + halfWidth, baseY + halfHeight);
 			canvas.DrawOval(shadowRect, shadowPaint);
 		}
 
-		// 2) Platform ve iskeletin geri kalanı
+		// İskelet ve Zemin
 		using (var paint = new SKPaint
 		{
 			Style = SKPaintStyle.Stroke,
 			StrokeWidth = 5,
-			Color = SKColors.Black,
+			Color = isDarkTheme ? SKColors.LightGray : SKColors.SaddleBrown,
 			IsAntialias = true
 		})
 		{
-			float centerX = info.Width / 2f;
-			float baseY = info.Height * 0.95f;
 			float poleHeight = info.Height * 0.7f;
 			float hookY = baseY - poleHeight;
 			float hookX = centerX + 100;
 
 			// Platform (zemin)
 			canvas.DrawLine(centerX - 100, baseY, centerX + 100, baseY, paint);
-
+			
 			// Dikey direk
 			canvas.DrawLine(centerX, baseY, centerX, hookY, paint);
 
 			// Üst kiriş
 			canvas.DrawLine(centerX, hookY, hookX, hookY, paint);
-			
+
 			// -- Adamın Çizimi ve İp --
-			// Animasyon için offset'leri uygula
 			float manHookX = hookX + (float)_manOffsetX;
 			float manHookY = hookY + (float)_manOffsetY;
 
-			// İp (Adamla birlikte hareket edecek şekilde güncellendi)
+			// İp
 			canvas.DrawLine(hookX, hookY, manHookX, manHookY + 40, paint);
 
-			// Vücut parçaları (CurrentStep'e göre)
+			// Vücut parçaları
 			int step = (BindingContext as GameViewModel)?.CurrentStep ?? 0;
-			if (step >= 1) canvas.DrawCircle(manHookX, manHookY + 65, 25, paint);                              // kafa
-			if (step >= 2) canvas.DrawLine(manHookX, manHookY + 90, manHookX, manHookY + 160, paint);              // gövde
-			if (step >= 3) canvas.DrawLine(manHookX, manHookY + 110, manHookX - 30, manHookY + 140, paint);         // sol kol
-			if (step >= 4) canvas.DrawLine(manHookX, manHookY + 110, manHookX + 30, manHookY + 140, paint);         // sağ kol
-			if (step >= 5) canvas.DrawLine(manHookX, manHookY + 160, manHookX - 30, manHookY + 210, paint);         // sol bacak
-			if (step >= 6) canvas.DrawLine(manHookX, manHookY + 160, manHookX + 30, manHookY + 210, paint);         // sağ bacak
+			if (step >= 1) canvas.DrawCircle(manHookX, manHookY + 65, 25, paint);
+			if (step >= 2) canvas.DrawLine(manHookX, manHookY + 90, manHookX, manHookY + 160, paint);
+			if (step >= 3) canvas.DrawLine(manHookX, manHookY + 110, manHookX - 30, manHookY + 140, paint);
+			if (step >= 4) canvas.DrawLine(manHookX, manHookY + 110, manHookX + 30, manHookY + 140, paint);
+		    if (step >= 5) canvas.DrawLine(manHookX, manHookY + 160, manHookX - 30, manHookY + 210, paint);
+			if (step >= 6) canvas.DrawLine(manHookX, manHookY + 160, manHookX + 30, manHookY + 210, paint);
+		}
+
+		// 6. Zemin Çimleri (En son, platformun üstüne çizilir)
+		using (var grassPaint = new SKPaint { IsAntialias = true, Color = SKColors.Green.WithAlpha(180), StrokeWidth = 2 })
+		{
+			var rand = new Random();
+			for (int i = 0; i < info.Width; i += 7)
+			{
+				var grassHeight = (float)(rand.NextDouble() * 10 + 5);
+				canvas.DrawLine(i, baseY, i, baseY - grassHeight, grassPaint);
+			}
 		}
 	}
 
