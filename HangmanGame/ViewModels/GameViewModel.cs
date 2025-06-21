@@ -24,10 +24,23 @@ namespace HangmanGame.ViewModels
 				?? new[] { string.Empty });
 
 		public string HangmanImage => $"hangman_{6 - RemainingTries}.png";
-		public string ScoreText =>
-			string.Format(Resources.Localization.Strings.ScoreFormat, CurrentScore);
-		public string TriesText =>
-			string.Format(Resources.Localization.Strings.TriesFormat, RemainingTries);
+		public string Score => CurrentScore.ToString();
+		public string TriesText => RemainingTries.ToString();
+
+		private bool _isMusicOn = true;
+		public bool IsMusicOn
+		{
+			get => _isMusicOn;
+			set
+			{
+				if (SetProperty(ref _isMusicOn, value))
+				{
+					OnPropertyChanged(nameof(SoundIcon));
+				}
+			}
+		}
+
+		public string SoundIcon => IsMusicOn ? "\ue050" : "\ue04f"; // Material Icons: volume_up / volume_off
 
 		// Dil-dinamik klavye satırları
 		public List<List<string>> KeyboardRows { get; private set; } = new();
@@ -47,11 +60,14 @@ namespace HangmanGame.ViewModels
 		private int CurrentScore = 0;
 
 		public ICommand GuessCommand { get; }
+		public ICommand ToggleMusicCommand { get; }
 
 		public GameViewModel()
 		{
 			_repo = new WordRepository();
 			GuessCommand = new Command<string>(OnGuess);
+			ToggleMusicCommand = new Command(OnToggleMusic);
+
 			_ = LoadNextWord(); 
 		}
 
@@ -119,7 +135,7 @@ namespace HangmanGame.ViewModels
 			OnPropertyChanged(nameof(HintText));
 			OnPropertyChanged(nameof(WordDisplay));
 			//OnPropertyChanged(nameof(HangmanImage));
-			OnPropertyChanged(nameof(ScoreText));
+			OnPropertyChanged(nameof(Score));
 			OnPropertyChanged(nameof(TriesText));
 		}
 
@@ -144,7 +160,7 @@ namespace HangmanGame.ViewModels
 
 			OnPropertyChanged(nameof(WordDisplay));
 			OnPropertyChanged(nameof(HangmanImage));  
-			OnPropertyChanged(nameof(ScoreText));
+			OnPropertyChanged(nameof(Score));
 			OnPropertyChanged(nameof(TriesText));
 
 			if (RemainingTries <= 0)
@@ -196,6 +212,12 @@ namespace HangmanGame.ViewModels
 			backingStore = value;
 			OnPropertyChanged(propertyName);
 			return true;
+		}
+
+		private void OnToggleMusic(object? obj)
+		{
+			IsMusicOn = !IsMusicOn;
+			// Burada gerçek ses çalma/durdurma mantığı olabilir
 		}
 	}
 }

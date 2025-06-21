@@ -1,6 +1,4 @@
-﻿using HangmanGame.Models;
-using HangmanGame.Resources.Localization;
-using HangmanGame.ViewModels;
+﻿using HangmanGame.ViewModels;
 
 namespace HangmanGame
 {
@@ -11,6 +9,5 @@ namespace HangmanGame
             InitializeComponent();
 			BindingContext = new MainPageViewModel();
 		}
-
 	}
 }

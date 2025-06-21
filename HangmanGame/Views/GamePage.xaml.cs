@@ -1,7 +1,5 @@
-﻿using CommunityToolkit.Maui;
-using CommunityToolkit.Maui.Extensions;
+﻿using CommunityToolkit.Maui.Views;
 using HangmanGame.ViewModels;
-using Microsoft.Maui.Layouts;
 using SkiaSharp;
 using SkiaSharp.Views.Maui;
 
@@ -24,29 +22,21 @@ public partial class GamePage : ContentPage
 
 		vm.GameOver += async (_, args) =>
 		{
-			await PlayHangAnimation();
-
+			await Task.Delay(500); // Animasyonun bitmesi için kısa bir bekleme
+			
 			var popup = new ResultPopup(args.Win, args.Answer);
-
-			var options = new PopupOptions
-			{
-				CanBeDismissedByTappingOutsideOfPopup = false,
-				PageOverlayColor = Colors.Black.WithAlpha(0.5f)
-			};
-
-			await Shell.Current.ShowPopupAsync(popup, options);
+			await this.ShowPopupAsync(popup);
 
 			if (popup.PlayAgain == true)
 			{
-				// “Yeni Oyun” dediyse oyunu sıfırla
-				await vm.LoadNextWord();
-				vm.CurrentStep = 0;
+				// "Yeni Oyun" dediyse oyunu sıfırla
+				var gameViewModel = (GameViewModel)BindingContext;
+				await gameViewModel.LoadNextWord();
 				CanvasView.InvalidateSurface();
-				vm.RefreshKeyboard();
 			}
 			else
 			{ 
-				// Çıkış dediyse istersen Shell.Current.GoToAsync("//MainPage") vs.
+				await Shell.Current.GoToAsync("..");
 			}
 		};
 	}
@@ -106,7 +96,7 @@ public partial class GamePage : ContentPage
 			canvas.DrawLine(centerX, hookY, hookX, hookY, paint);
 			canvas.DrawLine(hookX, hookY, hookX, hookY + 40, paint);
 
-			// Vücut parçaları (CurrentStep’e göre)
+			// Vücut parçaları (CurrentStep'e göre)
 			int step = (BindingContext as GameViewModel)?.CurrentStep ?? 0;
 			if (step >= 1) canvas.DrawCircle(hookX, hookY + 65, 25, paint);                              // kafa
 			if (step >= 2) canvas.DrawLine(hookX, hookY + 90, hookX, hookY + 160, paint);              // gövde
@@ -137,12 +127,18 @@ public partial class GamePage : ContentPage
 
 	private async void OnExitClicked(object sender, EventArgs e)
 	{
-		await Shell.Current.GoToAsync("//MainPage");
+		var popup = new ConfirmationPopup();
+		await this.ShowPopupAsync(popup);
+
+		if (popup.Confirmed)
+		{
+			await Shell.Current.GoToAsync("..");
+		}
 	}
 
 	private void ImageButton_Clicked(object sender, EventArgs e)
 	{
-
+		Shell.Current.GoToAsync("..");
 	}
 
 	protected override void OnAppearing()
@@ -152,7 +148,6 @@ public partial class GamePage : ContentPage
 		if (BindingContext is GameViewModel vm)
 		{
 			vm.RefreshKeyboard();
-			BuildKeyboardLayout(vm.KeyboardRows);
 		}
 	}
 
@@ -174,68 +169,5 @@ public partial class GamePage : ContentPage
 				? Colors.LightGreen
 				: Colors.Pink;
 		}
-	}
-
-	private void BuildKeyboardLayout(List<List<string>> keyboardRows)
-	{
-		KeyboardLayout.Children.Clear();
-
-		var displayWidth = DeviceDisplay.MainDisplayInfo.Width
-						   / DeviceDisplay.MainDisplayInfo.Density;
-		double spacing = 6;
-		double horizontalPadding = 20;
-		double availableWidth = displayWidth - horizontalPadding * 2;
-
-		var flexLayout = new FlexLayout
-		{
-			Wrap = FlexWrap.Wrap,
-			Direction = FlexDirection.Row,
-			JustifyContent = FlexJustify.Center,
-			AlignItems = FlexAlignItems.Center,
-			Margin = new Thickness(0, 5),
-		};
-
-		var allKeys = keyboardRows.SelectMany(r => r).ToList();
-		int referenceKeyCount = 10;
-		double totalSpacing = (referenceKeyCount + 1) * spacing;
-		double keyWidth = (availableWidth - totalSpacing) / referenceKeyCount;
-		double keyHeight = 48;
-
-		foreach (var key in allKeys)
-		{
-			var button = new Button
-			{
-				Text = key,
-				FontSize = 18,
-				WidthRequest = keyWidth,
-				HeightRequest = keyHeight,
-				CornerRadius = 6,
-				BackgroundColor = Colors.White,
-				BorderColor = Colors.Black,
-				BorderWidth = 1,
-				Margin = new Thickness(spacing / 2),
-				TextColor = Colors.Black,
-			};
-
-			button.Clicked += (s, e) =>
-			{
-				if (BindingContext is GameViewModel vm)
-					vm.GuessCommand.Execute(key);
-
-				button.IsEnabled = false;
-
-				if (BindingContext is GameViewModel vm2)
-				{
-					bool correct = vm2.IsCorrectLetter(key);
-					button.BackgroundColor = correct
-						? Colors.LightGreen
-						: Colors.Pink;
-				}
-			};
-
-			flexLayout.Children.Add(button);
-		}
-
-		KeyboardLayout.Children.Add(flexLayout);
 	}
 }

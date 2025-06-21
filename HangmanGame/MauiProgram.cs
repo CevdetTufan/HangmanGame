@@ -1,5 +1,4 @@
 ﻿using CommunityToolkit.Maui;
-using CommunityToolkit.Maui.Core;
 using Microsoft.Extensions.Logging;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using SQLitePCL;
@@ -17,11 +16,11 @@ namespace HangmanGame
 				.UseMauiApp<App>()
 				.UseSkiaSharp()
 				.UseMauiCommunityToolkit()
-				.UseMauiCommunityToolkitCore()
 				.ConfigureFonts(fonts =>
 				{
 					fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
 					fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+					fonts.AddFont("MaterialSymbols.ttf", "MaterialIcons");
 				});
 
 #if DEBUG
