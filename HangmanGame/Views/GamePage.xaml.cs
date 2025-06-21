@@ -9,6 +9,9 @@ namespace HangmanGame.Views;
 [QueryProperty(nameof(NeedsReset), "NewGame")]
 public partial class GamePage : ContentPage
 {
+	private double _manOffsetX = 0;
+	private double _manOffsetY = 0;
+
 	public bool NeedsReset { set
 		{
 			if (value && BindingContext is GameViewModel vm)
@@ -29,8 +32,15 @@ public partial class GamePage : ContentPage
 		{
 			CanvasView.InvalidateSurface();
 
-			if (vm.CurrentStep == 6)
-				await PlayHangAnimation();
+			// Son adımda büyük sallanma animasyonu oynayacağı için aradaki adımları sars.
+			if (vm.CurrentStep > 0 && vm.CurrentStep < 6)
+			{
+				await PlayPartAddedAnimation();
+			}
+			else if (vm.CurrentStep == 6)
+			{
+				await PlayAdvancedHangAnimation();
+			}
 		};
 
 		vm.GameOver += async (_, args) =>
@@ -94,7 +104,7 @@ public partial class GamePage : ContentPage
 	{
 		var canvas = e.Surface.Canvas;
 		var info = e.Info;
-		canvas.Clear(SKColors.White);
+		canvas.Clear(); // Arka planı temizle, temanın rengini alsın
 
 		// 1) Zeminin ortasından geçen elips gölgesi
 		using (var shadowPaint = new SKPaint
@@ -141,32 +151,65 @@ public partial class GamePage : ContentPage
 			// Dikey direk
 			canvas.DrawLine(centerX, baseY, centerX, hookY, paint);
 
-			// Üst kiriş ve ip
+			// Üst kiriş
 			canvas.DrawLine(centerX, hookY, hookX, hookY, paint);
-			canvas.DrawLine(hookX, hookY, hookX, hookY + 40, paint);
+			
+			// -- Adamın Çizimi ve İp --
+			// Animasyon için offset'leri uygula
+			float manHookX = hookX + (float)_manOffsetX;
+			float manHookY = hookY + (float)_manOffsetY;
+
+			// İp (Adamla birlikte hareket edecek şekilde güncellendi)
+			canvas.DrawLine(hookX, hookY, manHookX, manHookY + 40, paint);
 
 			// Vücut parçaları (CurrentStep'e göre)
 			int step = (BindingContext as GameViewModel)?.CurrentStep ?? 0;
-			if (step >= 1) canvas.DrawCircle(hookX, hookY + 65, 25, paint);                              // kafa
-			if (step >= 2) canvas.DrawLine(hookX, hookY + 90, hookX, hookY + 160, paint);              // gövde
-			if (step >= 3) canvas.DrawLine(hookX, hookY + 110, hookX - 30, hookY + 140, paint);         // sol kol
-			if (step >= 4) canvas.DrawLine(hookX, hookY + 110, hookX + 30, hookY + 140, paint);         // sağ kol
-			if (step >= 5) canvas.DrawLine(hookX, hookY + 160, hookX - 30, hookY + 210, paint);         // sol bacak
-			if (step >= 6) canvas.DrawLine(hookX, hookY + 160, hookX + 30, hookY + 210, paint);         // sağ bacak
+			if (step >= 1) canvas.DrawCircle(manHookX, manHookY + 65, 25, paint);                              // kafa
+			if (step >= 2) canvas.DrawLine(manHookX, manHookY + 90, manHookX, manHookY + 160, paint);              // gövde
+			if (step >= 3) canvas.DrawLine(manHookX, manHookY + 110, manHookX - 30, manHookY + 140, paint);         // sol kol
+			if (step >= 4) canvas.DrawLine(manHookX, manHookY + 110, manHookX + 30, manHookY + 140, paint);         // sağ kol
+			if (step >= 5) canvas.DrawLine(manHookX, manHookY + 160, manHookX - 30, manHookY + 210, paint);         // sol bacak
+			if (step >= 6) canvas.DrawLine(manHookX, manHookY + 160, manHookX + 30, manHookY + 210, paint);         // sağ bacak
 		}
 	}
 
-	private async Task PlayHangAnimation()
+	private async Task PlayAdvancedHangAnimation()
 	{
-		// CanvasView: SKCanvasView, VisualElement olduğu için RotateTo kullanabiliriz
-		// Birkaç kez sola-sağa sallanıp duruyor.
-		await CanvasView.RotateTo(10, 300, Easing.SinInOut);
-		await CanvasView.RotateTo(-10, 300, Easing.SinInOut);
-		await CanvasView.RotateTo(8, 300, Easing.SinInOut);
-		await CanvasView.RotateTo(-8, 300, Easing.SinInOut);
-		await CanvasView.RotateTo(0, 300, Easing.SinInOut);
+		// 1. Sarsılma (Jolt)
+		_manOffsetY = 20;
+		CanvasView.InvalidateSurface();
+		await Task.Delay(80);
+		_manOffsetY = 15;
+		CanvasView.InvalidateSurface();
+		await Task.Delay(80);
+		_manOffsetY = 18;
+		CanvasView.InvalidateSurface();
+		await Task.Delay(80);
+		
+		// 2. Yavaşça Sallanma (Sway)
+		double amplitude = 15.0; // Sallanma genişliği
+		for (int i = 0; i < 120; i++) // Yaklaşık 2 saniye sürer
+		{
+			_manOffsetX = amplitude * Math.Sin(i * 0.2);
+			amplitude *= 0.97; // Sallanmayı yavaşça durdur (damping)
+			
+			CanvasView.InvalidateSurface();
+			await Task.Delay(16); // ~60fps
+		}
+
+		_manOffsetX = 0;
+		_manOffsetY = 0;
+		CanvasView.InvalidateSurface();
 	}
 
+	private async Task PlayPartAddedAnimation()
+	{
+		await CanvasView.TranslateTo(-4, 0, 40, Easing.CubicOut);
+		await CanvasView.TranslateTo(4, 0, 40, Easing.CubicOut);
+		await CanvasView.TranslateTo(-2, 0, 40, Easing.CubicOut);
+		await CanvasView.TranslateTo(2, 0, 40, Easing.CubicOut);
+		await CanvasView.TranslateTo(0, 0, 40, Easing.CubicIn);
+	}
 
 	private void OnToggleMusicClicked(object sender, EventArgs e)
 	{
