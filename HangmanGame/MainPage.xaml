@@ -27,14 +27,6 @@
                     BorderColor="Black"
                     BorderWidth="2"/>
 
-            <Picker 
-                x:Name="LanguagePicker"
-                Title="{Binding LanguageSelectText}"
-                ItemsSource="{Binding Languages}"
-                SelectedItem="{Binding SelectedLang, Mode=TwoWay}"
-                ItemDisplayBinding="{Binding DisplayName}"
-                />
-            
         </VerticalStackLayout>
     </Grid>
 </ContentPage>

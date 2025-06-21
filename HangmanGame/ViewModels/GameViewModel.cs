@@ -81,52 +81,19 @@ namespace HangmanGame.ViewModels
 
 		public void RefreshKeyboard()
 		{
-			BuildKeyboard(AppState.SelectedLang); 
+			BuildKeyboard(); 
 			OnPropertyChanged(nameof(KeyboardRows));
 		}
 
 
-		private void BuildKeyboard(string code)
+		private void BuildKeyboard()
 		{
-			var rows = new List<List<string>>();
-			switch (code)
+			var rows = new List<List<string>>
 			{
-				case "de": // Almanca QWERTZ
-					rows.Add(new() { "Q", "W", "E", "R", "T", "Z", "U", "I", "O", "P" });
-					rows.Add(new() { "A", "S", "D", "F", "G", "H", "J", "K", "L" });
-					rows.Add(new() { "Y", "X", "C", "V", "B", "N", "M" });
-					break;
-				case "fr": // Fransızca AZERTY
-					rows.Add(new() { "A", "Z", "E", "R", "T", "Y", "U", "I", "O", "P" });
-					rows.Add(new() { "Q", "S", "D", "F", "G", "H", "J", "K", "L", "M" });
-					rows.Add(new() { "W", "X", "C", "V", "B", "N" });
-					break;
-				case "es": // İspanyolca QWERTY + Ñ
-					rows.Add(new() { "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "Ñ" });
-					rows.Add(new() { "A", "S", "D", "F", "G", "H", "J", "K", "L" });
-					rows.Add(new() { "Z", "X", "C", "V", "B", "N", "M" });
-					break;
-				case "it": // İtalyanca QWERTY
-					rows.Add(new() { "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P" });
-					rows.Add(new() { "A", "S", "D", "F", "G", "H", "J", "K", "L" });
-					rows.Add(new() { "Z", "X", "C", "V", "B", "N", "M" });
-					break;
-				case "tr": // Türkçe QÜERTY + ÖÇĞÜŞİ
-					rows.Add(new() { "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "Ğ", "Ü" });
-					rows.Add(new() { "A", "S", "D", "F", "G", "H", "J", "K", "L", "Ş", "İ" });
-					rows.Add(new() { "Z", "X", "C", "V", "B", "N", "M", "Ö", "Ç" });
-					break;
-				case "uk": // Ukraynaca Kiril
-					rows.Add(new() { "Й", "Ц", "У", "К", "Е", "Н", "Г", "Ш", "Щ", "З", "Х", "Ї" });
-					rows.Add(new() { "Ф", "І", "В", "А", "П", "Р", "О", "Л", "Д", "Ж", "Є" });
-					rows.Add(new() { "Я", "Ч", "С", "М", "И", "Т", "Ь", "Б", "Ю" });
-					break;
-				default:   // İngilizce QWERTY
-					rows.Add(new() { "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P" });
-					rows.Add(new() { "A", "S", "D", "F", "G", "H", "J", "K", "L" });
-					rows.Add(new() { "Z", "X", "C", "V", "B", "N", "M" });
-					break;
-			}
+				new() { "A", "B", "C", "Ç", "D", "E", "F", "G", "Ğ", "H" },
+				new() { "I", "İ", "J", "K", "L", "M", "N", "O", "Ö", "P" },
+				new() { "R", "S", "Ş", "T", "U", "Ü", "V", "Y", "Z" }
+			};
 
 			KeyboardRows = rows;
 			OnPropertyChanged(nameof(KeyboardRows));
@@ -148,7 +115,7 @@ namespace HangmanGame.ViewModels
 				CurrentStep = 0;
 				
 				// Klavyeyi yeniden oluştur
-				BuildKeyboard(AppState.SelectedLang);
+				BuildKeyboard();
 				
 				OnPropertyChanged(nameof(HintText));
 				OnPropertyChanged(nameof(WordDisplay));
@@ -183,7 +150,7 @@ namespace HangmanGame.ViewModels
 				CurrentStep = 0;
 				
 				// Klavyeyi yeniden oluştur
-				BuildKeyboard(AppState.SelectedLang);
+				BuildKeyboard();
 				
 				OnPropertyChanged(nameof(HintText));
 				OnPropertyChanged(nameof(WordDisplay));

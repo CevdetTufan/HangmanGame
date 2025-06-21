@@ -200,11 +200,10 @@ namespace HangmanGame.Data
 			cmd.CommandText = @"
                 SELECT Id, Level, Lang, Word, Meaning, IsUsed
                   FROM Words
-                 WHERE Lang = $lang
+                 WHERE Lang = 'tr'
                    AND IsUsed = 0
               ORDER BY RANDOM()
                  LIMIT 1";
-			cmd.Parameters.AddWithValue("$lang", AppState.SelectedLang);
 
 			await using var reader = await cmd.ExecuteReaderAsync();
 			if (await reader.ReadAsync())
@@ -246,8 +245,7 @@ namespace HangmanGame.Data
 				cmd.CommandText = @"
 	                UPDATE Words
 	                   SET IsUsed = 0
-	                 WHERE Lang = $lang";
-				cmd.Parameters.AddWithValue("$lang", AppState.SelectedLang);
+	                 WHERE Lang = 'tr'";
 
 				await cmd.ExecuteNonQueryAsync();
 			}
