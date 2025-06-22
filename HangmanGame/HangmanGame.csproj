@@ -21,10 +21,10 @@
 		<Nullable>enable</Nullable>
 
 		<!-- Display name -->
-		<ApplicationTitle>HangmanGame</ApplicationTitle>
+		<ApplicationTitle>Hangman</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.hangmangame</ApplicationId>
+		<ApplicationId>com.wordivio.hangman</ApplicationId>
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
