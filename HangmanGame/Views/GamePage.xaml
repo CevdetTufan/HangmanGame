@@ -7,7 +7,7 @@
     x:Class="HangmanGame.Views.GamePage"
     x:Name="thisPage"
     Shell.NavBarIsVisible="False"
-    BackgroundColor="{AppThemeBinding Light=#F7F7F7, Dark=#1E1E1E}">
+    BackgroundColor="#f5f7fa">
 
     <Grid Padding="16" RowSpacing="12"
           RowDefinitions="Auto, *, Auto, Auto">

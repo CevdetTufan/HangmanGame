@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+    <!-- Background circle -->
+    <circle cx="64" cy="64" r="60" fill="#87CEEB" stroke="#4682B4" stroke-width="2"/>
+    
+    <!-- Hangman icon -->
+    <path d="M64,15 A30,30 0 1,1 64,75 A30,30 0 1,1 64,15 M64,75 L64,115 L50,100" 
+          stroke-width="8" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" 
+          fill="none" 
+          stroke="#2F4F4F" />
+</svg> 

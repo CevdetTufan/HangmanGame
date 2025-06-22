@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="HangmanGame.MainPage"
              Shell.NavBarIsVisible="False"
+             BackgroundColor="White"
              xmlns:resx="clr-namespace:HangmanGame.Resources.Localization">
 
     <Grid RowDefinitions="*,Auto,*" Padding="20">
@@ -23,10 +24,24 @@
                     Padding="15"
                     CornerRadius="8" 
                     BackgroundColor="White"
-                    TextColor="Black"
-                    BorderColor="Black"
+                    TextColor="#4682B4"
+                    BorderColor="#4682B4"
                     BorderWidth="2"/>
 
         </VerticalStackLayout>
+
+        <!-- Social Media Icons -->
+        <HorizontalStackLayout Grid.Row="2" 
+                               HorizontalOptions="Center" 
+                               VerticalOptions="End" 
+                               Spacing="15"
+                               Padding="20">
+
+            <ImageButton ToolTipProperties.Text="Website" Source="icon_web.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.wordivio.com" WidthRequest="24" HeightRequest="24" />
+            <ImageButton ToolTipProperties.Text="Facebook" Source="icon_facebook.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.facebook.com/wordivio" WidthRequest="24" HeightRequest="24"/>
+            <ImageButton ToolTipProperties.Text="Instagram" Source="icon_instagram.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.instagram.com/wordivio" WidthRequest="24" HeightRequest="24"/>
+            <ImageButton ToolTipProperties.Text="Twitter/X" Source="icon_x.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.x.com/wordivio" WidthRequest="24" HeightRequest="24"/>
+            <ImageButton ToolTipProperties.Text="TikTok" Source="icon_tiktok.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.tiktok.com/@wordivioapp" WidthRequest="24" HeightRequest="24"/>
+        </HorizontalStackLayout>
     </Grid>
 </ContentPage>

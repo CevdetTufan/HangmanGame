@@ -3,6 +3,9 @@ using Microsoft.Extensions.Logging;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using SQLitePCL;
 using Plugin.Maui.Audio;
+using HangmanGame.Data;
+using HangmanGame.ViewModels;
+using HangmanGame.Views;
 
 namespace HangmanGame
 {
@@ -29,6 +32,13 @@ namespace HangmanGame
 			builder.Logging.AddDebug();
 #endif
 			builder.Services.AddLocalization();
+
+			builder.Services.AddSingleton<WordRepository>();
+			builder.Services.AddTransient<GameViewModel>();
+			builder.Services.AddTransient<GamePage>();
+			builder.Services.AddTransient<MainPageViewModel>();
+			builder.Services.AddTransient<MainPage>();
+
 			return builder.Build();
 		}
 	}
