@@ -7,16 +7,23 @@
     x:Class="HangmanGame.Views.GamePage"
     x:Name="thisPage"
     Shell.NavBarIsVisible="False"
-    BackgroundColor="#f5f7fa">
+    BackgroundColor="#f5f7fa"
+    Padding="0">
 
-    <Grid Padding="16" RowSpacing="12"
-          RowDefinitions="Auto, *, Auto, Auto">
+    <Grid Padding="0" RowSpacing="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="4*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="4*" />
+        </Grid.RowDefinitions>
 
         <!-- 1. Üst Bar (HUD) -->
         <Border Grid.Row="0" 
                 Padding="12,8" 
                 StrokeShape="RoundRectangle 24"
-                BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2C}">
+                BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2C}"
+                Margin="0,0,0,16">
             <Grid ColumnDefinitions="Auto, *, Auto, Auto" ColumnSpacing="16" VerticalOptions="Center">
                 
                 <Button Grid.Column="0" Text="&#xe88a;" FontFamily="MaterialIcons" FontSize="28" Clicked="ImageButton_Clicked" BackgroundColor="Transparent" TextColor="{AppThemeBinding Light=Black, Dark=White}" Padding="0"/>
@@ -46,18 +53,21 @@
                 BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2C}"
                 StrokeThickness="1"
                 StrokeShape="RoundRectangle 20"
-                Padding="16"
-                Margin="0,10,0,0"
-                HorizontalOptions="Center">
-            <skia:SKCanvasView
-                x:Name="CanvasView"
-                PaintSurface="OnCanvasViewPaintSurface"
-                VerticalOptions="Fill"
-                HorizontalOptions="Center" />
+                Padding="0"
+                Margin="0,0,0,20"
+                HorizontalOptions="Fill"
+                VerticalOptions="Fill">
+            <Grid MinimumHeightRequest="300" MinimumWidthRequest="200" HorizontalOptions="Fill" VerticalOptions="Fill">
+                <skia:SKCanvasView
+                    x:Name="CanvasView"
+                    PaintSurface="OnCanvasViewPaintSurface"
+                    VerticalOptions="Fill"
+                    HorizontalOptions="Fill" />
+            </Grid>
         </Border>
 
-        <!-- İpucu ve Kelime Alanı -->
-        <VerticalStackLayout Grid.Row="2" Spacing="8" Padding="10" HorizontalOptions="Center" VerticalOptions="Center" Margin="0,10,0,0">
+        <!-- Soru ve cevap alanı -->
+        <VerticalStackLayout Grid.Row="2" Spacing="0" Padding="0" Margin="0,0,0,16" HorizontalOptions="Fill" VerticalOptions="Fill">
             <Label
                 Text="{Binding HintText}"
                 FontSize="16"
@@ -70,20 +80,19 @@
                 FontAttributes="Bold"
                 HorizontalOptions="Center" />
         </VerticalStackLayout>
-
-        <!-- Klavye -->
+        <!-- Klavye alanı -->
         <VerticalStackLayout
             Grid.Row="3"
             x:Name="KeyboardLayout"
-            Spacing="8"
+            Spacing="0"
+            Padding="0"
+            Margin="0,0,0,0"
             BindableLayout.ItemsSource="{Binding KeyboardRows}"
             HorizontalOptions="Center"
-            VerticalOptions="End">
-
-            <!-- Klavye Satır Şablonu -->
+            VerticalOptions="Fill">
             <BindableLayout.ItemTemplate>
                 <DataTemplate>
-                    <FlexLayout JustifyContent="Center" Wrap="Wrap" BindableLayout.ItemsSource="{Binding .}">
+                    <HorizontalStackLayout Spacing="0" Padding="0" Margin="0" BindableLayout.ItemsSource="{Binding .}">
                         <BindableLayout.ItemTemplate>
                             <DataTemplate>
                                 <Button
@@ -91,11 +100,11 @@
                                     Command="{Binding BindingContext.GuessCommand, Source={x:Reference thisPage}}"
                                     CommandParameter="{Binding .}"
                                     Clicked="OnKeyClicked"
-                                    FontSize="14"
+                                    FontSize="13"
                                     FontAttributes="Bold"
                                     CornerRadius="8"
-                                    Margin="3"
-                                    Padding="12,16"
+                                    Margin="1"
+                                    Padding="6,8"
                                     TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark=White}"
                                     BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2C}"
                                     BorderColor="{AppThemeBinding Light=#E0E0E0, Dark=#333333}"
@@ -106,7 +115,7 @@
                                 </Button>
                             </DataTemplate>
                         </BindableLayout.ItemTemplate>
-                    </FlexLayout>
+                    </HorizontalStackLayout>
                 </DataTemplate>
             </BindableLayout.ItemTemplate>
         </VerticalStackLayout>

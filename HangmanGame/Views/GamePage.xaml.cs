@@ -48,11 +48,32 @@ public partial class GamePage : ContentPage
 		this.Disappearing += OnPageDisappearing;
 	}
 
+	protected override void OnAppearing()
+	{
+		base.OnAppearing();
+		double screenWidth = Application.Current?.MainPage?.Width ?? 360;
+		double screenHeight = Application.Current?.MainPage?.Height ?? 640;
+		int totalLetters = _vm.KeyboardLetters.Count;
+		int maxPerRow = 10; // Maksimum bir satırda gösterilecek tuş sayısı
+		double buttonSize = Math.Min(
+			(screenWidth - 32) / maxPerRow,
+			(screenHeight * 0.28) / Math.Ceiling((double)totalLetters / maxPerRow)
+		);
+		Device.BeginInvokeOnMainThread(() =>
+		{
+			var keybButtons = KeyboardLayout.Children.OfType<Button>();
+			foreach (var btn in keybButtons)
+			{
+				btn.WidthRequest = buttonSize;
+				btn.HeightRequest = buttonSize;
+				btn.FontSize = buttonSize * 0.45;
+			}
+		});
+	}
+
 	private void ResetKeyboard()
 	{
-		var keybButtons = KeyboardLayout
-			.Children.OfType<FlexLayout>()
-			.SelectMany(flex => flex.Children.OfType<Button>());
+		var keybButtons = KeyboardLayout.Children.OfType<Button>();
 
 		Color originalColor;
 		if (Application.Current?.RequestedTheme == AppTheme.Light)
@@ -64,11 +85,22 @@ public partial class GamePage : ContentPage
 			originalColor = Color.FromArgb("#FF2C2C2C");
 		}
 
+		double screenWidth = Application.Current?.MainPage?.Width ?? 360;
+		double screenHeight = Application.Current?.MainPage?.Height ?? 640;
+		int totalLetters = _vm.KeyboardLetters.Count;
+		int maxPerRow = 10;
+		double buttonSize = Math.Min(
+			(screenWidth - 32) / maxPerRow,
+			(screenHeight * 0.28) / Math.Ceiling((double)totalLetters / maxPerRow)
+		);
 
 		foreach (var btn in keybButtons)
 		{
 			btn.IsEnabled = true;
 			btn.BackgroundColor = originalColor;
+			btn.WidthRequest = buttonSize;
+			btn.HeightRequest = buttonSize;
+			btn.FontSize = buttonSize * 0.45;
 		}
 	}
 
@@ -170,6 +202,9 @@ public partial class GamePage : ContentPage
 		// --- Arka Plan Sahnesi ---
 		bool isDarkTheme = Application.Current?.RequestedTheme == AppTheme.Dark;
 
+		float baseY = info.Height; // Tam alt kenar
+		float centerX = info.Width / 2f;
+
 		// 1. Gökyüzü Gradient'ı
 		using (var bgPaint = new SKPaint())
 		{
@@ -220,9 +255,6 @@ public partial class GamePage : ContentPage
 			}
 		}
 
-		float baseY = info.Height * 0.95f;
-		float centerX = info.Width / 2f;
-
 		// 4. Uzaktaki Ağaçlar
 		using (var treePaint = new SKPaint { IsAntialias = true, Color = isDarkTheme ? SKColor.Parse("#5D6D7E") : SKColor.Parse("#95A5A6") })
 		{
@@ -270,8 +302,10 @@ public partial class GamePage : ContentPage
 			MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 8)
 		})
 		{
-			float halfWidth = 100f;
-			float halfHeight = 6f;
+			float platformWidth = info.Width * 0.2f;
+			float platformHeight = info.Height * 0.03f;
+			float halfWidth = platformWidth / 2f;
+			float halfHeight = platformHeight / 2f;
 			var shadowRect = new SKRect(centerX - halfWidth, baseY - halfHeight, centerX + halfWidth, baseY + halfHeight);
 			canvas.DrawOval(shadowRect, shadowPaint);
 		}
@@ -280,18 +314,20 @@ public partial class GamePage : ContentPage
 		using (var paint = new SKPaint
 		{
 			Style = SKPaintStyle.Stroke,
-			StrokeWidth = 5,
+			StrokeWidth = info.Width * 0.012f, // Dinamik kalınlık
 			Color = isDarkTheme ? SKColors.LightGray : SKColors.SaddleBrown,
 			IsAntialias = true
 		})
 		{
+			float platformWidth = info.Width * 0.2f;
+			float platformHeight = info.Height * 0.03f;
 			float poleHeight = info.Height * 0.7f;
 			float hookY = baseY - poleHeight;
-			float hookX = centerX + 100;
+			float hookX = centerX + info.Width * 0.18f;
 
 			// Platform (zemin)
-			canvas.DrawLine(centerX - 100, baseY, centerX + 100, baseY, paint);
-			
+			canvas.DrawLine(centerX - platformWidth / 2f, baseY, centerX + platformWidth / 2f, baseY, paint);
+
 			// Dikey direk
 			canvas.DrawLine(centerX, baseY, centerX, hookY, paint);
 
@@ -302,29 +338,49 @@ public partial class GamePage : ContentPage
 			float manHookX = hookX + (float)_manOffsetX;
 			float manHookY = hookY + (float)_manOffsetY;
 
+			float headRadius = info.Height * 0.05f;
+			float bodyLength = info.Height * 0.13f;
+			float armLength = info.Width * 0.08f;
+			float legLength = info.Height * 0.12f;
+
 			// İp
-			canvas.DrawLine(hookX, hookY, manHookX, manHookY + 40, paint);
+			canvas.DrawLine(hookX, hookY, manHookX, manHookY + headRadius * 1.6f, paint);
 
 			// Vücut parçaları
 			int step = (BindingContext as GameViewModel)?.CurrentStep ?? 0;
-			if (step >= 1) canvas.DrawCircle(manHookX, manHookY + 65, 25, paint);
-			if (step >= 2) canvas.DrawLine(manHookX, manHookY + 90, manHookX, manHookY + 160, paint);
-			if (step >= 3) canvas.DrawLine(manHookX, manHookY + 110, manHookX - 30, manHookY + 140, paint);
-			if (step >= 4) canvas.DrawLine(manHookX, manHookY + 110, manHookX + 30, manHookY + 140, paint);
-		    if (step >= 5) canvas.DrawLine(manHookX, manHookY + 160, manHookX - 30, manHookY + 210, paint);
-			if (step >= 6) canvas.DrawLine(manHookX, manHookY + 160, manHookX + 30, manHookY + 210, paint);
+			if (step >= 1) canvas.DrawCircle(manHookX, manHookY + headRadius * 2.6f, headRadius, paint); // Kafa
+			if (step >= 2) canvas.DrawLine(manHookX, manHookY + headRadius * 3.7f, manHookX, manHookY + headRadius * 3.7f + bodyLength, paint); // Gövde
+			if (step >= 3) canvas.DrawLine(manHookX, manHookY + headRadius * 4.2f, manHookX - armLength, manHookY + headRadius * 4.2f + armLength, paint); // Sol kol
+			if (step >= 4) canvas.DrawLine(manHookX, manHookY + headRadius * 4.2f, manHookX + armLength, manHookY + headRadius * 4.2f + armLength, paint); // Sağ kol
+			if (step >= 5) canvas.DrawLine(manHookX, manHookY + headRadius * 3.7f + bodyLength, manHookX - legLength * 0.6f, manHookY + headRadius * 3.7f + bodyLength + legLength, paint); // Sol bacak
+			if (step >= 6) canvas.DrawLine(manHookX, manHookY + headRadius * 3.7f + bodyLength, manHookX + legLength * 0.6f, manHookY + headRadius * 3.7f + bodyLength + legLength, paint); // Sağ bacak
 		}
 
 		// 6. Zemin Çimleri (En son, platformun üstüne çizilir)
 		using (var grassPaint = new SKPaint { IsAntialias = true, Color = SKColors.Green.WithAlpha(180), StrokeWidth = 2 })
 		{
-			for (int i = 0; i < info.Width; i += 7)
+			// Çim çizgilerini canvas'ın tam kenarından kenarına kadar çiz
+			for (int i = 0; i < info.Width; i += 4)
 			{
 				var grassHeight = (float)(_random.NextDouble() * 10 + 5);
 				// Zamanla değişen bir sinüs dalgası ile sallanma efekti
 				var sway = (float)Math.Sin(_time + i * 0.1) * 3;
 				canvas.DrawLine(i, baseY, i + sway, baseY - grassHeight, grassPaint);
 			}
+		}
+
+		// 3D zemin efekti (platformun altına, kenardan kenara)
+		using (var groundPaint = new SKPaint
+		{
+			Style = SKPaintStyle.Fill,
+			Color = SKColor.Parse("#8D5524").WithAlpha(180), // Toprak kahverengisi
+			IsAntialias = true,
+			MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 12)
+		})
+		{
+			float groundHeight = info.Height * 0.045f;
+			var groundRect = new SKRect(0, baseY - groundHeight / 2, info.Width, baseY + groundHeight / 2);
+			canvas.DrawOval(groundRect, groundPaint);
 		}
 	}
 
@@ -405,6 +461,19 @@ public partial class GamePage : ContentPage
 			btn.BackgroundColor = correct
 				? Colors.LightGreen
 				: Colors.Pink;
+
+			// Ekran boyutuna göre tuş boyutunu tekrar uygula (gerekirse)
+			double screenWidth = Application.Current?.MainPage?.Width ?? 360;
+			double screenHeight = Application.Current?.MainPage?.Height ?? 640;
+			int totalLetters = _vm.KeyboardLetters.Count;
+			int maxPerRow = 10;
+			double buttonSize = Math.Min(
+				(screenWidth - 32) / maxPerRow,
+				(screenHeight * 0.28) / Math.Ceiling((double)totalLetters / maxPerRow)
+			);
+			btn.WidthRequest = buttonSize;
+			btn.HeightRequest = buttonSize;
+			btn.FontSize = buttonSize * 0.45;
 		}
 	}
 

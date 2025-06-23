@@ -46,6 +46,7 @@ namespace HangmanGame.ViewModels
 
 		// Dil-dinamik klavye satırları
 		public List<List<string>> KeyboardRows { get; private set; } = new();
+		public List<string> KeyboardLetters { get; private set; } = new();
 
 		private WordEntry? _currentWord;
 
@@ -82,20 +83,19 @@ namespace HangmanGame.ViewModels
 		public void RefreshKeyboard()
 		{
 			BuildKeyboard(); 
-			OnPropertyChanged(nameof(KeyboardRows));
+			OnPropertyChanged(nameof(KeyboardLetters));
 		}
 
 
 		private void BuildKeyboard()
 		{
-			var rows = new List<List<string>>
+			KeyboardRows = new List<List<string>>
 			{
-				new() { "A", "B", "C", "Ç", "D", "E", "F", "G", "Ğ", "H" },
-				new() { "I", "İ", "J", "K", "L", "M", "N", "O", "Ö", "P" },
-				new() { "R", "S", "Ş", "T", "U", "Ü", "V", "Y", "Z" }
+				new() { "A", "B", "C", "Ç", "D", "E", "F", "G" },
+				new() { "Ğ", "H", "I", "İ", "J", "K", "L", "M" },
+				new() { "N", "O", "Ö", "P", "R", "S", "Ş", "T" },
+				new() { "U", "Ü", "V", "Y", "Z" }
 			};
-
-			KeyboardRows = rows;
 			OnPropertyChanged(nameof(KeyboardRows));
 		}
 
@@ -121,7 +121,7 @@ namespace HangmanGame.ViewModels
 				OnPropertyChanged(nameof(WordDisplay));
 				OnPropertyChanged(nameof(Score));
 				OnPropertyChanged(nameof(TriesText));
-				OnPropertyChanged(nameof(KeyboardRows));
+				OnPropertyChanged(nameof(KeyboardLetters));
 
 				NewGameStarted?.Invoke(this, EventArgs.Empty);
 			}
@@ -156,7 +156,7 @@ namespace HangmanGame.ViewModels
 				OnPropertyChanged(nameof(WordDisplay));
 				OnPropertyChanged(nameof(Score));
 				OnPropertyChanged(nameof(TriesText));
-				OnPropertyChanged(nameof(KeyboardRows));
+				OnPropertyChanged(nameof(KeyboardLetters));
 
 				NewGameStarted?.Invoke(this, EventArgs.Empty);
 			}

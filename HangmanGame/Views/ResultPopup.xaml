@@ -37,7 +37,7 @@
 
             <HorizontalStackLayout Spacing="10" HorizontalOptions="Center" Margin="0,20,0,0">
                 <Button
-                    Text="Ana Menü"
+                    Text="Ana Sayfa"
                     Clicked="OnExitClicked"
                     BackgroundColor="{AppThemeBinding Light=#F0F0F0, Dark=#505050}"
                     TextColor="{AppThemeBinding Light=Black, Dark=White}"
