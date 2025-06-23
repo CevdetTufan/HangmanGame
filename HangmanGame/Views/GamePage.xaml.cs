@@ -203,7 +203,7 @@ public partial class GamePage : ContentPage
 		bool isDarkTheme = Application.Current?.RequestedTheme == AppTheme.Dark;
 
 		float baseY = info.Height; // Tam alt kenar
-		float centerX = info.Width / 2f;
+		float centerX = info.Width * 0.32f;
 
 		// 1. Gökyüzü Gradient'ı
 		using (var bgPaint = new SKPaint())
@@ -314,7 +314,7 @@ public partial class GamePage : ContentPage
 		using (var paint = new SKPaint
 		{
 			Style = SKPaintStyle.Stroke,
-			StrokeWidth = info.Width * 0.012f, // Dinamik kalınlık
+			StrokeWidth = info.Width * 0.007f, // Daha ince çizgi
 			Color = isDarkTheme ? SKColors.LightGray : SKColors.SaddleBrown,
 			IsAntialias = true
 		})
