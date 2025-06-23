@@ -37,11 +37,11 @@
                                Spacing="15"
                                Padding="20">
 
-            <ImageButton ToolTipProperties.Text="Website" Source="icon_web.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.wordivio.com" WidthRequest="24" HeightRequest="24" />
-            <ImageButton ToolTipProperties.Text="Facebook" Source="icon_facebook.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.facebook.com/wordivio" WidthRequest="24" HeightRequest="24"/>
-            <ImageButton ToolTipProperties.Text="Instagram" Source="icon_instagram.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.instagram.com/wordivio" WidthRequest="24" HeightRequest="24"/>
-            <ImageButton ToolTipProperties.Text="Twitter/X" Source="icon_x.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.x.com/wordivio" WidthRequest="24" HeightRequest="24"/>
-            <ImageButton ToolTipProperties.Text="TikTok" Source="icon_tiktok.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.tiktok.com/@wordivioapp" WidthRequest="24" HeightRequest="24"/>
+            <ImageButton ToolTipProperties.Text="Website" Source="icon_web.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.wordivio.com" WidthRequest="16" HeightRequest="16" />
+            <ImageButton ToolTipProperties.Text="Facebook" Source="icon_facebook.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.facebook.com/wordivio" WidthRequest="16" HeightRequest="16"/>
+            <ImageButton ToolTipProperties.Text="Instagram" Source="icon_instagram.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.instagram.com/wordivio" WidthRequest="16" HeightRequest="16"/>
+            <ImageButton ToolTipProperties.Text="Twitter/X" Source="icon_x.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.x.com/wordivio" WidthRequest="16" HeightRequest="16"/>
+            <ImageButton ToolTipProperties.Text="TikTok" Source="icon_tiktok.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.tiktok.com/@wordivioapp" WidthRequest="16" HeightRequest="16"/>
         </HorizontalStackLayout>
     </Grid>
 </ContentPage>
