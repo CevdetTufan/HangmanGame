@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Plugin.Maui.Audio;
+using System.IO;
 
 namespace HangmanGame.ViewModels
 {
@@ -29,7 +30,7 @@ namespace HangmanGame.ViewModels
 		public string Score => _totalScore.ToString();
 		public string TriesText => RemainingTries.ToString();
 
-		private bool _isMusicOn = true;
+		private bool _isMusicOn = Preferences.Get("IsMusicOn", true);
 		public bool IsMusicOn
 		{
 			get => _isMusicOn;
@@ -37,6 +38,7 @@ namespace HangmanGame.ViewModels
 			{
 				if (SetProperty(ref _isMusicOn, value))
 				{
+					Preferences.Set("IsMusicOn", value);
 					OnPropertyChanged(nameof(SoundIcon));
 				}
 			}
@@ -162,43 +164,38 @@ namespace HangmanGame.ViewModels
 			}
 		}
 
-		private void OnGuess(string letter)
+		private async void OnGuess(string letter)
 		{
-			char c = char.ToUpperInvariant(letter[0]);
-
-			if (_guessedLetters.Contains(c))
+			if (string.IsNullOrWhiteSpace(letter) || _guessedLetters.Contains(letter[0]))
 				return;
 
-			_guessedLetters.Add(c);
+			_guessedLetters.Add(letter[0]);
 
-			if (!_currentWord!.Word.ToUpperInvariant().Contains(c))
+			if (IsCorrectLetter(letter))
 			{
-				RemainingTries--;
-				_roundScore = Math.Max(0, _roundScore - 10);
-				if (IsMusicOn) _wrongSoundPlayer?.Play();
-				IncreaseStep();
+				await PlayCorrectSoundAsync();
+				// ... mevcut doğru harf işlemleri ...
 			}
 			else
 			{
-				if (IsMusicOn) _correctSoundPlayer?.Play();
+				await PlayWrongSoundAsync();
+				IncreaseStep();
+				RemainingTries--;
+				OnPropertyChanged(nameof(TriesText));
 			}
 
 			OnPropertyChanged(nameof(WordDisplay));
-			OnPropertyChanged(nameof(HangmanImage));  
-			OnPropertyChanged(nameof(TriesText));
 
-			if (RemainingTries <= 0)
-			{
-				GameOver?.Invoke(this, (false, _currentWord!.Word));
-			}
-			else if (_currentWord.Word.ToUpperInvariant().All(ch => _guessedLetters.Contains(ch)))
+			if (WordDisplay.Replace(" ", "") == CurrentAnswer)
 			{
 				_totalScore += _roundScore;
 				Preferences.Set("TotalScore", _totalScore);
 				OnPropertyChanged(nameof(Score));
-
-				AppState.WordsPlayedCount++;
-				GameOver?.Invoke(this, (true, _currentWord.Word));
+				GameOver?.Invoke(this, (true, CurrentAnswer));
+			}
+			else if (RemainingTries <= 0)
+			{
+				GameOver?.Invoke(this, (false, CurrentAnswer));
 			}
 		}
 
@@ -242,7 +239,7 @@ namespace HangmanGame.ViewModels
 		private void OnToggleMusic(object? obj)
 		{
 			IsMusicOn = !IsMusicOn;
-
+			Preferences.Set("IsMusicOn", IsMusicOn);
 			if (IsMusicOn)
 			{
 				_backgroundMusicPlayer?.Play();
@@ -251,6 +248,42 @@ namespace HangmanGame.ViewModels
 			{
 				_backgroundMusicPlayer?.Pause();
 			}
+		}
+
+		public async Task PlayBackgroundMusicAsync()
+		{
+			if (!IsMusicOn) return;
+			if (_backgroundMusicPlayer == null)
+			{
+				var stream = await FileSystem.OpenAppPackageFileAsync("background.mp3");
+				_backgroundMusicPlayer = _audioManager.CreatePlayer(stream);
+				_backgroundMusicPlayer.Loop = true;
+			}
+			_backgroundMusicPlayer.Play();
+		}
+
+		public void StopBackgroundMusic()
+		{
+			_backgroundMusicPlayer?.Pause();
+		}
+
+		public async Task PlayCorrectSoundAsync()
+		{
+			var stream = await FileSystem.OpenAppPackageFileAsync("correct.mp3");
+			_correctSoundPlayer = _audioManager.CreatePlayer(stream);
+			_correctSoundPlayer.Play();
+		}
+
+		public async Task PlayWrongSoundAsync()
+		{
+			var stream = await FileSystem.OpenAppPackageFileAsync("wrong.mp3");
+			_wrongSoundPlayer = _audioManager.CreatePlayer(stream);
+			_wrongSoundPlayer.Play();
+		}
+
+		public async Task StartGameAudioAsync()
+		{
+			await PlayBackgroundMusicAsync();
 		}
 	}
 }

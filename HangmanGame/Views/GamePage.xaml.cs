@@ -51,6 +51,7 @@ public partial class GamePage : ContentPage
 	protected override void OnAppearing()
 	{
 		base.OnAppearing();
+		_ = _vm.StartGameAudioAsync();
 		double screenWidth = Application.Current?.MainPage?.Width ?? 360;
 		double screenHeight = Application.Current?.MainPage?.Height ?? 640;
 		int totalLetters = _vm.KeyboardLetters.Count;
@@ -122,6 +123,8 @@ public partial class GamePage : ContentPage
 	private void OnPageDisappearing(object? sender, EventArgs e)
 	{
 		_animationTimer?.Stop();
+
+		_vm.StopBackgroundMusic();
 
 		_vm.GameOver -= Vm_GameOver;
 		_vm.StepChanged -= Vm_StepChanged;
