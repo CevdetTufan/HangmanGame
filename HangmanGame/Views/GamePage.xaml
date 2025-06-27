@@ -5,122 +5,119 @@
     xmlns:vm="clr-namespace:HangmanGame.ViewModels"
     xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
     x:Class="HangmanGame.Views.GamePage"
+    x:Name="thisPage"
     Shell.NavBarIsVisible="False"
-    BackgroundColor="White">
+    BackgroundColor="#f5f7fa"
+    Padding="0">
 
-    <!-- Klavye Tuş Şablonu -->
-    <ContentPage.Resources>
-        <DataTemplate x:Key="KeyTemplate">
-            <Button
-                Text="{Binding .}"
-                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:GameViewModel}}, Path=GuessCommand}"
-                CommandParameter="{Binding .}"
+    <Grid Padding="0" RowSpacing="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="4*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="4*" />
+        </Grid.RowDefinitions>
+
+        <!-- 1. Üst Bar (HUD) -->
+        <Border Grid.Row="0" 
+                Padding="12,8" 
+                StrokeShape="RoundRectangle 24"
+                BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2C}"
+                Margin="0,0,0,16">
+            <Grid ColumnDefinitions="Auto, *, Auto, Auto" ColumnSpacing="16" VerticalOptions="Center">
+                
+                <Button Grid.Column="0" Text="&#xe88a;" FontFamily="MaterialIcons" FontSize="28" Clicked="ImageButton_Clicked" BackgroundColor="Transparent" TextColor="{AppThemeBinding Light=Black, Dark=White}" Padding="0"/>
+
+                <HorizontalStackLayout Grid.Column="1" Spacing="16" VerticalOptions="Center" HorizontalOptions="End">
+                    <!-- Score -->
+                    <HorizontalStackLayout Spacing="4" VerticalOptions="Center">
+                        <Label Text="&#xe838;" FontFamily="MaterialIcons" FontSize="24" VerticalOptions="Center" TextColor="Gold"/>
+                        <Label Text="{Binding Score}" FontSize="20" FontAttributes="Bold" VerticalOptions="Center"/>
+                    </HorizontalStackLayout>
+                    
+                    <!-- Misses -->
+                    <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
+                        <Label Text="&#xe87d;" FontFamily="MaterialIcons" FontSize="24" VerticalOptions="Center" TextColor="#FF5252"/>
+                        <Label Text="{Binding TriesText}" FontSize="20" FontAttributes="Bold" VerticalOptions="Center"/>
+                    </HorizontalStackLayout>
+                </HorizontalStackLayout>
+
+                <Button Grid.Column="2" Text="{Binding SoundIcon}" FontFamily="MaterialIcons" FontSize="28" Command="{Binding ToggleMusicCommand}" BackgroundColor="Transparent" TextColor="{AppThemeBinding Light=Black, Dark=White}" Padding="0"/>
+                <Button Grid.Column="3" Text="&#xe5cd;" FontFamily="MaterialIcons" FontSize="28" Clicked="OnExitClicked" BackgroundColor="Transparent" TextColor="{AppThemeBinding Light=Black, Dark=White}" Padding="0"/>
+            </Grid>
+        </Border>
+
+        <!-- 2. Adam Asmaca Alanı -->
+        <Border Grid.Row="1"
+                Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#333333}"
+                BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2C}"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 20"
+                Padding="0"
+                Margin="0,0,0,20"
+                HorizontalOptions="Fill"
+                VerticalOptions="Fill">
+            <Grid MinimumHeightRequest="300" MinimumWidthRequest="200" HorizontalOptions="Fill" VerticalOptions="Fill">
+                <skia:SKCanvasView
+                    x:Name="CanvasView"
+                    PaintSurface="OnCanvasViewPaintSurface"
+                    VerticalOptions="Fill"
+                    HorizontalOptions="Fill" />
+            </Grid>
+        </Border>
+
+        <!-- Soru ve cevap alanı -->
+        <VerticalStackLayout Grid.Row="2" Spacing="0" Padding="0" Margin="0,0,0,16" HorizontalOptions="Fill" VerticalOptions="Fill">
+            <Label
+                Text="{Binding HintText}"
                 FontSize="16"
-                WidthRequest="34"
-                HeightRequest="48"
-                CornerRadius="6"
-                TextColor="Black"
-                BackgroundColor="White"
-                BorderColor="Black"
-                BorderWidth="1" />
-        </DataTemplate>
-    </ContentPage.Resources>
-
-    <ContentPage.BindingContext>
-        <vm:GameViewModel />
-    </ContentPage.BindingContext>
-
-    <Grid Padding="20" RowSpacing="12"
-          RowDefinitions="Auto,250,Auto,Auto,Auto">
-
-        <!-- 1. Üst Bar -->
-        <HorizontalStackLayout Grid.Row="0"
-                               Spacing="16"
-                               HorizontalOptions="Center"
-                               VerticalOptions="Center">
-            <!-- Ana Sayfa -->
-            <ImageButton Source="home.png"
-                         Clicked="ImageButton_Clicked"
-                         WidthRequest="32"
-                         HeightRequest="32"
-                         BackgroundColor="Transparent" />
-
-            <!-- Can -->
-            <HorizontalStackLayout Spacing="4" VerticalOptions="Center">
-                <Label Text="❤️" FontSize="18" />
-                <Label Text="{Binding TriesText}" FontSize="16" TextColor="Black" />
-            </HorizontalStackLayout>
-
-            <!-- Ses -->
-            <ImageButton Source="sound_on.png"
-                         Clicked="OnToggleMusicClicked"
-                         WidthRequest="32"
-                         HeightRequest="32"
-                         BackgroundColor="Transparent" />
-
-            <!-- Çık -->
-            <Button Text="Çık"
-                    FontSize="14"
-                    Padding="10,2"
-                    Clicked="OnExitClicked"
-                    BackgroundColor="#EEE"
-                    CornerRadius="8" />
-        </HorizontalStackLayout>
-
-        <!-- 2. Adam Asmaca Çizimi -->
-        <skia:SKCanvasView
-            Grid.Row="1"
-            x:Name="CanvasView"
-            PaintSurface="OnCanvasViewPaintSurface"
-            VerticalOptions="Fill"
-            HorizontalOptions="Center"
-            HeightRequest="250"
-            Margin="0" />
-
-        <!-- 3. Soru -->
-        <Label
-            Grid.Row="2"
-            Text="{Binding HintText}"
-            FontSize="20"
-            FontAttributes="Bold"
-            HorizontalOptions="Center"
-            TextColor="Black"
-            Margin="0" />
-
-        <!-- 4. Kelime (Tahmin edilen harfler) -->
-        <Label
+                HorizontalOptions="Center"
+                HorizontalTextAlignment="Center"
+                TextColor="{AppThemeBinding Light=Gray, Dark=LightGray}" />
+            <Label
+                Text="{Binding WordDisplay}"
+                FontSize="32"
+                FontAttributes="Bold"
+                HorizontalOptions="Center" />
+        </VerticalStackLayout>
+        <!-- Klavye alanı -->
+        <VerticalStackLayout
             Grid.Row="3"
-            Text="{Binding WordDisplay}"
-            FontSize="26"
-            TextColor="Black"
+            x:Name="KeyboardLayout"
+            Spacing="0"
+            Padding="0"
+            Margin="0,0,0,0"
+            BindableLayout.ItemsSource="{Binding KeyboardRows}"
             HorizontalOptions="Center"
-            Margin="0,5,0,0" />
-
-        <!-- 5. Klavye -->
-        <StackLayout
-            Grid.Row="4"
-            Spacing="6"
-            HorizontalOptions="Center"
-            Margin="0,5,0,0"
-            MaximumWidthRequest="360">
-
-            <!-- Satır 1 -->
-            <StackLayout Orientation="Horizontal" Spacing="4"
-                         HorizontalOptions="CenterAndExpand"
-                         BindableLayout.ItemsSource="{Binding KeyboardRows[0]}"
-                         BindableLayout.ItemTemplate="{StaticResource KeyTemplate}" />
-
-            <!-- Satır 2 -->
-            <StackLayout Orientation="Horizontal" Spacing="4" Padding="18,0,0,0"
-                         HorizontalOptions="CenterAndExpand"
-                         BindableLayout.ItemsSource="{Binding KeyboardRows[1]}"
-                         BindableLayout.ItemTemplate="{StaticResource KeyTemplate}" />
-
-            <!-- Satır 3 -->
-            <StackLayout Orientation="Horizontal" Spacing="4" Padding="36,0,0,0"
-                         HorizontalOptions="CenterAndExpand"
-                         BindableLayout.ItemsSource="{Binding KeyboardRows[2]}"
-                         BindableLayout.ItemTemplate="{StaticResource KeyTemplate}" />
-        </StackLayout>
+            VerticalOptions="Fill">
+            <BindableLayout.ItemTemplate>
+                <DataTemplate>
+                    <HorizontalStackLayout Spacing="0" Padding="0" Margin="0" BindableLayout.ItemsSource="{Binding .}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                                <Button
+                                    Text="{Binding .}"
+                                    Command="{Binding BindingContext.GuessCommand, Source={x:Reference thisPage}}"
+                                    CommandParameter="{Binding .}"
+                                    Clicked="OnKeyClicked"
+                                    FontSize="13"
+                                    FontAttributes="Bold"
+                                    CornerRadius="8"
+                                    Margin="1"
+                                    Padding="6,8"
+                                    TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark=White}"
+                                    BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2C}"
+                                    BorderColor="{AppThemeBinding Light=#E0E0E0, Dark=#333333}"
+                                    BorderWidth="1">
+                                    <Button.Shadow>
+                                        <Shadow Brush="#000000" Offset="2,2" Radius="4" Opacity="0.1" />
+                                    </Button.Shadow>
+                                </Button>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </HorizontalStackLayout>
+                </DataTemplate>
+            </BindableLayout.ItemTemplate>
+        </VerticalStackLayout>
     </Grid>
 </ContentPage>

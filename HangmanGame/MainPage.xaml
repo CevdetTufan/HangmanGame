@@ -3,42 +3,45 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="HangmanGame.MainPage"
              Shell.NavBarIsVisible="False"
+             BackgroundColor="White"
              xmlns:resx="clr-namespace:HangmanGame.Resources.Localization">
 
-    <ScrollView>
-        <Grid RowDefinitions="*,Auto,*">
-            <VerticalStackLayout Grid.Row="1"
-                             Spacing="30"
+    <Grid RowDefinitions="*,Auto,*" Padding="20">
+
+        <VerticalStackLayout Grid.Row="1"
+                             Spacing="20"
                              HorizontalOptions="Center"
-                             Padding="20"
                              WidthRequest="300">
 
-                <Label Text="HANGMAN"
-                   FontSize="36"
+            <Label Text="HANGMAN"
+                   FontSize="48"
                    FontAttributes="Bold"
-                   TextColor="Black"
                    HorizontalOptions="Center" />
 
-                <Picker 
-                    x:Name="LanguagePicker"
-                    Title="{Binding LanguageSelectText}"
-                    ItemsSource="{Binding Languages}"
-                    SelectedItem="{Binding SelectedLang, Mode=TwoWay}"
-                    ItemDisplayBinding="{Binding DisplayName}"
-                    TextColor="Black"
-                    />
-
-                <Button Text="{Binding StartGameText}"
+            <Button Text="{Binding StartGameText}"
                     Command="{Binding StartGameCommand}"
-                    TextColor="Black"
-                    BackgroundColor="White"
-                    BorderColor="Black"
-                    BorderWidth="2"
                     FontSize="18"
                     Padding="15"
-                    CornerRadius="8" />
-            </VerticalStackLayout>
-        </Grid>
-    </ScrollView>
+                    CornerRadius="8" 
+                    BackgroundColor="White"
+                    TextColor="#4682B4"
+                    BorderColor="#4682B4"
+                    BorderWidth="2"/>
 
+        </VerticalStackLayout>
+
+        <!-- Social Media Icons -->
+        <HorizontalStackLayout Grid.Row="2" 
+                               HorizontalOptions="Center" 
+                               VerticalOptions="End" 
+                               Spacing="15"
+                               Padding="20">
+
+            <ImageButton ToolTipProperties.Text="Website" Source="icon_web.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.wordivio.com" WidthRequest="16" HeightRequest="16" />
+            <ImageButton ToolTipProperties.Text="Facebook" Source="icon_facebook.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.facebook.com/wordivio" WidthRequest="16" HeightRequest="16"/>
+            <ImageButton ToolTipProperties.Text="Instagram" Source="icon_instagram.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.instagram.com/wordivio" WidthRequest="16" HeightRequest="16"/>
+            <ImageButton ToolTipProperties.Text="Twitter/X" Source="icon_x.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.x.com/wordivio" WidthRequest="16" HeightRequest="16"/>
+            <ImageButton ToolTipProperties.Text="TikTok" Source="icon_tiktok.svg" Clicked="OnSocialIconClicked" CommandParameter="https://www.tiktok.com/@wordivioapp" WidthRequest="16" HeightRequest="16"/>
+        </HorizontalStackLayout>
+    </Grid>
 </ContentPage>

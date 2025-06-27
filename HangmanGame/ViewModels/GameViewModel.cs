@@ -1,6 +1,6 @@
 ﻿using HangmanGame.Data;
 using HangmanGame.Models.HangmanGame.Models;
-using HangmanGame.Utils;
+using Plugin.Maui.Audio;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
@@ -9,141 +9,208 @@ namespace HangmanGame.ViewModels
 {
 	public class GameViewModel : INotifyPropertyChanged
 	{
-
-		public ImageSource HangmanImageSource { get; private set; }
-
 		public event PropertyChangedEventHandler? PropertyChanged;
+		public event EventHandler<(bool Win, string Answer)>? GameOver;
+		public event EventHandler? NewGameStarted;
 		void OnPropertyChanged([CallerMemberName] string? name = null)
 			=> PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
 		// UI metinleri
-		public string GameTitleText => Resources.Localization.Strings.GameTitle;
+		//public string GameTitleText => Resources.Localization.Strings.GameTitle;
 		public string HintText => _currentWord?.Meaning ?? string.Empty;
+
 		public string WordDisplay =>
-			string.Join(" ", _currentWord?.Word
-								  .Select(c => _guessedLetters.Contains(c) ? c.ToString() : "_")
-								  ?? new[] { string.Empty });
+			string.Join(" ", _currentWord?.Word.ToUpperInvariant()
+				.Select(c => _guessedLetters.Contains(c) ? c.ToString() : "_")
+				?? new[] { string.Empty });
+
 		public string HangmanImage => $"hangman_{6 - RemainingTries}.png";
-		public string ScoreText =>
-			string.Format(Resources.Localization.Strings.ScoreFormat, CurrentScore);
-		public string TriesText =>
-			string.Format(Resources.Localization.Strings.TriesFormat, RemainingTries);
+		public string Score => _totalScore.ToString();
+		public string TriesText => RemainingTries.ToString();
+
+		private bool _isMusicOn = Preferences.Get("IsMusicOn", true);
+		public bool IsMusicOn
+		{
+			get => _isMusicOn;
+			set
+			{
+				if (SetProperty(ref _isMusicOn, value))
+				{
+					Preferences.Set("IsMusicOn", value);
+					OnPropertyChanged(nameof(SoundIcon));
+				}
+			}
+		}
+
+		public string SoundIcon => IsMusicOn ? "\ue050" : "\ue04f"; // Material Icons: volume_up / volume_off
 
 		// Dil-dinamik klavye satırları
 		public List<List<string>> KeyboardRows { get; private set; } = new();
+		public List<string> KeyboardLetters { get; private set; } = new();
 
 		private WordEntry? _currentWord;
+
+		public string CurrentAnswer =>
+				_currentWord?.Word.ToUpperInvariant() ?? string.Empty;
+
+		public bool IsCorrectLetter(string letter) =>
+			CurrentAnswer.Contains(letter.ToUpperInvariant());
+
 		private readonly WordRepository _repo;
 		private readonly HashSet<char> _guessedLetters = new();
 
 		private int RemainingTries = 6;
-		private int CurrentScore = 0;
+		private int _totalScore = 0;
+		private int _roundScore = 0;
+
+		private readonly IAudioManager _audioManager;
+		private IAudioPlayer? _backgroundMusicPlayer;
+		private IAudioPlayer? _correctSoundPlayer;
+		private IAudioPlayer? _wrongSoundPlayer;
 
 		public ICommand GuessCommand { get; }
+		public ICommand ToggleMusicCommand { get; }
 
+		private bool _gameOverFired = false;
 
-		public GameViewModel()
+		public bool IsGameActive => !_gameOverFired;
+
+		public GameViewModel(IAudioManager audioManager)
 		{
+			_audioManager = audioManager;
 			_repo = new WordRepository();
-			GuessCommand = new Command<string>(OnGuess);
-
-			// Başlangıçta seçili dile göre klavye oluştur
-			BuildKeyboard(AppState.SelectedLang);
-
-			// İlk kelimeyi yükle
-			LoadNextWord();
+			GuessCommand = new Command<string>(OnGuess, CanGuess);
+			ToggleMusicCommand = new Command(OnToggleMusic);
+			_totalScore = Preferences.Get("TotalScore", 0);
 		}
 
-		private void BuildKeyboard(string code)
+		public void RefreshKeyboard()
 		{
-			var rows = new List<List<string>>();
-			switch (code)
-			{
-				case "de": // Almanca QWERTZ
-					rows.Add(new() { "Q", "W", "E", "R", "T", "Z", "U", "I", "O", "P" });
-					rows.Add(new() { "A", "S", "D", "F", "G", "H", "J", "K", "L" });
-					rows.Add(new() { "Y", "X", "C", "V", "B", "N", "M" });
-					break;
-				case "fr": // Fransızca AZERTY
-					rows.Add(new() { "A", "Z", "E", "R", "T", "Y", "U", "I", "O", "P" });
-					rows.Add(new() { "Q", "S", "D", "F", "G", "H", "J", "K", "L", "M" });
-					rows.Add(new() { "W", "X", "C", "V", "B", "N" });
-					break;
-				case "es": // İspanyolca QWERTY + Ñ
-					rows.Add(new() { "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "Ñ" });
-					rows.Add(new() { "A", "S", "D", "F", "G", "H", "J", "K", "L" });
-					rows.Add(new() { "Z", "X", "C", "V", "B", "N", "M" });
-					break;
-				case "it": // İtalyanca QWERTY
-					rows.Add(new() { "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P" });
-					rows.Add(new() { "A", "S", "D", "F", "G", "H", "J", "K", "L" });
-					rows.Add(new() { "Z", "X", "C", "V", "B", "N", "M" });
-					break;
-				case "tr": // Türkçe QÜERTY + ÖÇĞÜŞİ
-					rows.Add(new() { "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "Ğ", "Ü" });
-					rows.Add(new() { "A", "S", "D", "F", "G", "H", "J", "K", "L", "Ş", "İ" });
-					rows.Add(new() { "Z", "X", "C", "V", "B", "N", "M", "Ö", "Ç" });
-					break;
-				case "uk": // Ukraynaca Kiril
-					rows.Add(new() { "Й", "Ц", "У", "К", "Е", "Н", "Г", "Ш", "Щ", "З", "Х", "Ї" });
-					rows.Add(new() { "Ф", "І", "В", "А", "П", "Р", "О", "Л", "Д", "Ж", "Є" });
-					rows.Add(new() { "Я", "Ч", "С", "М", "И", "Т", "Ь", "Б", "Ю" });
-					break;
-				default:   // İngilizce QWERTY
-					rows.Add(new() { "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P" });
-					rows.Add(new() { "A", "S", "D", "F", "G", "H", "J", "K", "L" });
-					rows.Add(new() { "Z", "X", "C", "V", "B", "N", "M" });
-					break;
-			}
+			BuildKeyboard(); 
+			OnPropertyChanged(nameof(KeyboardLetters));
+		}
 
-			KeyboardRows = rows;
+
+		private void BuildKeyboard()
+		{
+			KeyboardRows = new List<List<string>>
+			{
+				new() { "A", "B", "C", "Ç", "D", "E", "F", "G" },
+				new() { "Ğ", "H", "I", "İ", "J", "K", "L", "M" },
+				new() { "N", "O", "Ö", "P", "R", "S", "Ş", "T" },
+				new() { "U", "Ü", "V", "Y", "Z" }
+			};
 			OnPropertyChanged(nameof(KeyboardRows));
 		}
 
-		private async void LoadNextWord()
-		{
-			var level = GetLevel(AppState.WordsPlayedCount);
-			_currentWord = await _repo.GetDummyWordAsync();
-			RemainingTries = 6;
-			_guessedLetters.Clear();
 
-			OnPropertyChanged(nameof(HintText));
-			OnPropertyChanged(nameof(WordDisplay));
-			OnPropertyChanged(nameof(HangmanImage));
-			OnPropertyChanged(nameof(ScoreText));
-			OnPropertyChanged(nameof(TriesText));
+		public async Task ResetAndLoadNewWordAsync()
+		{
+			_gameOverFired = false;
+			(GuessCommand as Command<string>)?.ChangeCanExecute();
+			if (IsMusicOn)
+				await PlayBackgroundMusicAsync();
+			await _repo.InitializeAsync();
+			
+			// Yeni kelime yükle
+			var word = await _repo.GetRandomWordAsync();
+			if (word != null)
+			{
+				_currentWord = word;
+				_guessedLetters.Clear();
+				RemainingTries = 6;
+				_roundScore = _currentWord.Word.Length * 10;
+				CurrentStep = 0;
+				
+				// Klavyeyi yeniden oluştur
+				BuildKeyboard();
+				
+				OnPropertyChanged(nameof(HintText));
+				OnPropertyChanged(nameof(WordDisplay));
+				OnPropertyChanged(nameof(Score));
+				OnPropertyChanged(nameof(TriesText));
+				OnPropertyChanged(nameof(KeyboardLetters));
+
+				NewGameStarted?.Invoke(this, EventArgs.Empty);
+			}
+			else
+			{
+				// Kelime kalmadıysa özel bir olay tetikle
+				GameOver?.Invoke(this, (true, "TEBRİKLER! BÜTÜN KELİMELERİ BİLDİNİZ!"));
+			}
+		}
+
+		public async Task ResetAllWordsAndLoadNewWordAsync()
+		{
+			_gameOverFired = false;
+			(GuessCommand as Command<string>)?.ChangeCanExecute();
+			if (IsMusicOn)
+				await PlayBackgroundMusicAsync();
+			await _repo.InitializeAsync();
+			// Tüm kelimeleri sıfırlama işlemi kaldırıldı
+			// await _repo.ResetAllWords();
+			// Yeni kelime yükle
+			var word = await _repo.GetRandomWordAsync();
+			if (word != null)
+			{
+				_currentWord = word;
+				_guessedLetters.Clear();
+				RemainingTries = 6;
+				_roundScore = _currentWord.Word.Length * 10;
+				CurrentStep = 0;
+				// Klavyeyi yeniden oluştur
+				BuildKeyboard();
+				OnPropertyChanged(nameof(HintText));
+				OnPropertyChanged(nameof(WordDisplay));
+				OnPropertyChanged(nameof(Score));
+				OnPropertyChanged(nameof(TriesText));
+				OnPropertyChanged(nameof(KeyboardLetters));
+				NewGameStarted?.Invoke(this, EventArgs.Empty);
+			}
+		}
+
+		private bool CanGuess(string letter)
+		{
+			return !_gameOverFired;
 		}
 
 		private async void OnGuess(string letter)
 		{
-			char c = letter[0];
-			if (_guessedLetters.Contains(c)) return;
-			_guessedLetters.Add(c);
+			if (string.IsNullOrWhiteSpace(letter) || _guessedLetters.Contains(letter[0]) || _gameOverFired)
+				return;
 
-			if (!_currentWord!.Word.Contains(c)) RemainingTries--;
-			else CurrentScore += 10;
+			_guessedLetters.Add(letter[0]);
 
-			// UI güncelle
-			OnPropertyChanged(nameof(WordDisplay));
-			OnPropertyChanged(nameof(HangmanImage));
-			OnPropertyChanged(nameof(ScoreText));
-			OnPropertyChanged(nameof(TriesText));
-
-			// Sonuç sayfasına yönlendir
-			if (RemainingTries <= 0)
-				await Shell.Current.GoToAsync($"//result?win=false&answer={_currentWord.Word}");
-			else if (_currentWord.Word.All(ch => _guessedLetters.Contains(ch)))
+			if (IsCorrectLetter(letter))
 			{
-				AppState.WordsPlayedCount++;
-				await Shell.Current.GoToAsync($"//result?win=true&answer={_currentWord.Word}");
+				await PlayCorrectSoundAsync();
+				// ... mevcut doğru harf işlemleri ...
 			}
-		}
+			else
+			{
+				await PlayWrongSoundAsync();
+				IncreaseStep();
+				RemainingTries--;
+				OnPropertyChanged(nameof(TriesText));
+			}
 
-		private static string GetLevel(int count)
-		{
-			if (count < 3) return "easy";
-			if (count < 6) return "medium";
-			return "hard";
+			OnPropertyChanged(nameof(WordDisplay));
+
+			if (WordDisplay.Replace(" ", "") == CurrentAnswer)
+			{
+				_totalScore += _roundScore;
+				Preferences.Set("TotalScore", _totalScore);
+				OnPropertyChanged(nameof(Score));
+				_gameOverFired = true;
+				(GuessCommand as Command<string>)?.ChangeCanExecute();
+				GameOver?.Invoke(this, (true, CurrentAnswer));
+			}
+			else if (RemainingTries <= 0)
+			{
+				_gameOverFired = true;
+				(GuessCommand as Command<string>)?.ChangeCanExecute();
+				GameOver?.Invoke(this, (false, CurrentAnswer));
+			}
 		}
 
 		private int _currentStep;
@@ -174,6 +241,58 @@ namespace HangmanGame.ViewModels
 			backingStore = value;
 			OnPropertyChanged(propertyName);
 			return true;
+		}
+
+		private void OnToggleMusic(object? obj)
+		{
+			IsMusicOn = !IsMusicOn;
+			Preferences.Set("IsMusicOn", IsMusicOn);
+			if (IsMusicOn)
+			{
+				_backgroundMusicPlayer?.Play();
+			}
+			else
+			{
+				_backgroundMusicPlayer?.Pause();
+			}
+		}
+
+		public async Task PlayBackgroundMusicAsync()
+		{
+			if (!IsMusicOn) return;
+			if (_backgroundMusicPlayer == null)
+			{
+				var stream = await FileSystem.OpenAppPackageFileAsync("background.mp3");
+				_backgroundMusicPlayer = _audioManager.CreatePlayer(stream);
+				_backgroundMusicPlayer.Loop = true;
+			}
+			_backgroundMusicPlayer.Play();
+		}
+
+		public void StopBackgroundMusic()
+		{
+			_backgroundMusicPlayer?.Pause();
+		}
+
+		public async Task PlayCorrectSoundAsync()
+		{
+			if (!IsMusicOn) return;
+			var stream = await FileSystem.OpenAppPackageFileAsync("correct.mp3");
+			_correctSoundPlayer = _audioManager.CreatePlayer(stream);
+			_correctSoundPlayer.Play();
+		}
+
+		public async Task PlayWrongSoundAsync()
+		{
+			if (!IsMusicOn) return;
+			var stream = await FileSystem.OpenAppPackageFileAsync("wrong.mp3");
+			_wrongSoundPlayer = _audioManager.CreatePlayer(stream);
+			_wrongSoundPlayer.Play();
+		}
+
+		public async Task StartGameAudioAsync()
+		{
+			await PlayBackgroundMusicAsync();
 		}
 	}
 }
