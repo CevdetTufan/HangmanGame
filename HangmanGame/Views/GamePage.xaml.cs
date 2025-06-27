@@ -19,6 +19,8 @@ public partial class GamePage : ContentPage
 	private bool _sceneInitialized = false;
 	private double _time = 0;
 	private GameViewModel _vm;
+	private bool _popupOpen = false;
+	private bool _isMusicOn = Preferences.Get("IsMusicOn", true);
 
 	// Hareketli nesneler için basit bir yardımcı sınıf
 	private class SceneObject
@@ -38,6 +40,17 @@ public partial class GamePage : ContentPage
 			}
 		} 
 	}
+
+	public bool IsMusicOn
+	{
+		get => _isMusicOn;
+		set
+		{
+			_isMusicOn = value;
+			Preferences.Set("IsMusicOn", value);
+		}
+	}
+
 	public GamePage(IAudioManager audioManager)
 	{
 		InitializeComponent();
@@ -74,35 +87,29 @@ public partial class GamePage : ContentPage
 
 	private void ResetKeyboard()
 	{
-		var keybButtons = KeyboardLayout.Children.OfType<Button>();
-
-		Color originalColor;
-		if (Application.Current?.RequestedTheme == AppTheme.Light)
+		Device.BeginInvokeOnMainThread(() =>
 		{
-			originalColor = Colors.White;
-		}
-		else
-		{
-			originalColor = Color.FromArgb("#FF2C2C2C");
-		}
-
-		double screenWidth = Application.Current?.MainPage?.Width ?? 360;
-		double screenHeight = Application.Current?.MainPage?.Height ?? 640;
-		int totalLetters = _vm.KeyboardLetters.Count;
-		int maxPerRow = 10;
-		double buttonSize = Math.Min(
-			(screenWidth - 32) / maxPerRow,
-			(screenHeight * 0.28) / Math.Ceiling((double)totalLetters / maxPerRow)
-		);
-
-		foreach (var btn in keybButtons)
-		{
-			btn.IsEnabled = true;
-			btn.BackgroundColor = originalColor;
-			btn.WidthRequest = buttonSize;
-			btn.HeightRequest = buttonSize;
-			btn.FontSize = buttonSize * 0.45;
-		}
+			var keybButtons = KeyboardLayout.Children.OfType<Button>();
+			foreach (var btn in keybButtons)
+			{
+				btn.IsEnabled = true;
+				// XAML'deki AppThemeBinding ile aynı renkler
+				if (Application.Current?.RequestedTheme == AppTheme.Light)
+				{
+					btn.BackgroundColor = Colors.White;
+					btn.TextColor = Color.FromArgb("#512BD4");
+					btn.BorderColor = Color.FromArgb("#E0E0E0");
+				}
+				else
+				{
+					btn.BackgroundColor = Color.FromArgb("#2C2C2C");
+					btn.TextColor = Colors.White;
+					btn.BorderColor = Color.FromArgb("#333333");
+				}
+				btn.BorderWidth = 1;
+				VisualStateManager.GoToState(btn, "Normal");
+			}
+		});
 	}
 
 	private void OnPageAppearing(object? sender, EventArgs e)
@@ -449,22 +456,20 @@ public partial class GamePage : ContentPage
 
 	private void OnKeyClicked(object sender, EventArgs e)
 	{
+		if (BindingContext is GameViewModel vm)
+		{
+			// Oyun aktif değilse hiçbir şey yapma
+			if (!vm.IsGameActive)
+				return;
+		}
 		if (sender is Button btn
-			&& BindingContext is GameViewModel vm
+			&& BindingContext is GameViewModel vm2
 			&& btn.CommandParameter is string letter)
 		{
-			// first execute the guess
-			vm.GuessCommand.Execute(letter);
-
-			// now disable
+			vm2.GuessCommand.Execute(letter);
 			btn.IsEnabled = false;
-
-			// color-feedback
-			var correct = vm.IsCorrectLetter(letter);
-			btn.BackgroundColor = correct
-				? Colors.LightGreen
-				: Colors.Pink;
-
+			var correct = vm2.IsCorrectLetter(letter);
+			btn.BackgroundColor = correct ? Colors.LightGreen : Colors.Pink;
 			// Ekran boyutuna göre tuş boyutunu tekrar uygula (gerekirse)
 			double screenWidth = Application.Current?.MainPage?.Width ?? 360;
 			double screenHeight = Application.Current?.MainPage?.Height ?? 640;
@@ -480,36 +485,41 @@ public partial class GamePage : ContentPage
 		}
 	}
 
+
+	private void SetAllKeyboardButtonsEnabled(bool enabled)
+	{
+		foreach (var row in KeyboardLayout.Children.OfType<HorizontalStackLayout>())
+		{
+			foreach (var btn in row.Children.OfType<Button>())
+			{
+				btn.IsEnabled = enabled;
+			}
+		}
+	}
+
 	#region ViewModel Event Handlers
 
 	private async void Vm_GameOver(object? sender, (bool Win, string Answer) args)
 	{
-		await Task.Delay(500); // Animasyonun bitmesi için kısa bir bekleme
+		if (_popupOpen) return;
+		_popupOpen = true;
+
+		SetAllKeyboardButtonsEnabled(false);
 
 		var popup = new ResultPopup(args.Win, args.Answer);
 		await this.ShowPopupAsync(popup);
 
 		if (popup.PlayAgain == true)
 		{
-			// "Yeni Oyun" dediyse oyunu sıfırla
 			var gameViewModel = (GameViewModel)BindingContext;
-
-			// Eğer tüm kelimeler tamamlandıysa, kelimeleri sıfırla
-			if (args.Answer == "TEBRİKLER! BÜTÜN KELİMELERİ BİLDİNİZ!")
-			{
-				await gameViewModel.ResetAllWordsAndLoadNewWordAsync();
-			}
-			else
-			{
-				await gameViewModel.ResetAndLoadNewWordAsync();
-			}
-
-			CanvasView.InvalidateSurface();
+			await gameViewModel.ResetAndLoadNewWordAsync();
 		}
 		else
 		{
 			await Shell.Current.GoToAsync("//MainPage");
 		}
+
+		_popupOpen = false;
 	}
 
 	private async void Vm_StepChanged(object? sender, EventArgs e)
@@ -528,9 +538,72 @@ public partial class GamePage : ContentPage
 
 	private void Vm_NewGameStarted(object? sender, EventArgs e)
 	{
-		ResetKeyboard();
-		_sceneInitialized = false; // Animasyonlu nesneleri yeniden başlat
+		// Tüm işlemi ana thread'de, tek seferde yap
+		MainThread.BeginInvokeOnMainThread(() =>
+		{
+			KeyboardLayout.Children.Clear();
+
+			if (BindingContext is GameViewModel vm)
+			{
+				foreach (var row in vm.KeyboardRows)
+				{
+					var rowLayout = new HorizontalStackLayout { Spacing = 0, Padding = 0, Margin = 0 };
+					foreach (var letter in row)
+					{
+						var btn = new Button
+						{
+							Text = letter,
+							FontSize = 13,
+							FontAttributes = FontAttributes.Bold,
+							CornerRadius = 8,
+							Margin = new Thickness(1),
+							Padding = new Thickness(6, 8),
+							Command = vm.GuessCommand,
+							CommandParameter = letter,
+							IsEnabled = true
+						};
+
+						if (Application.Current?.RequestedTheme == AppTheme.Light)
+						{
+							btn.BackgroundColor = Colors.White;
+							btn.TextColor = Color.FromArgb("#512BD4");
+							btn.BorderColor = Color.FromArgb("#E0E0E0");
+						}
+						else
+						{
+							btn.BackgroundColor = Color.FromArgb("#2C2C2C");
+							btn.TextColor = Colors.White;
+							btn.BorderColor = Color.FromArgb("#333333");
+						}
+						btn.BorderWidth = 1;
+
+						btn.Clicked += OnKeyClicked;
+						rowLayout.Children.Add(btn);
+					}
+					KeyboardLayout.Children.Add(rowLayout);
+				}
+			}
+			// Klavye alanı her zaman görünür!
+			KeyboardLayout.IsVisible = true;
+		});
+		_sceneInitialized = false;
 	}
 
 	#endregion
+
+	protected override bool OnBackButtonPressed()
+	{
+		MainThread.BeginInvokeOnMainThread(async () =>
+		{
+			var popup = new ConfirmationPopup();
+			await this.ShowPopupAsync(popup);
+			if (popup.Confirmed)
+			{
+				_vm.StopBackgroundMusic();
+				await Shell.Current.GoToAsync("//MainPage");
+			}
+			// Onaylamazsa hiçbir şey yapma, sayfada kal
+		});
+		return true; // Varsayılan davranışı engelle
+	}
 }

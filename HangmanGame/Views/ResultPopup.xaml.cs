@@ -14,6 +14,15 @@ namespace HangmanGame.Views
 			// Default: null (ne seçti bilinmiyor)
 			PlayAgain = null;
 
+			// Popup herhangi bir şekilde kapanırsa, eğer PlayAgain null ise yeni oyun başlatılsın
+			this.Closed += (s, e) =>
+			{
+				if (PlayAgain == null)
+				{
+					PlayAgain = true;
+				}
+			};
+
 			// Özel durum: Tüm kelimeler tamamlandı
 			if (answer == "TEBRİKLER! BÜTÜN KELİMELERİ BİLDİNİZ!")
 			{
